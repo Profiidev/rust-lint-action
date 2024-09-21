@@ -40,7 +40,7 @@ async function runAction() {
 
 	if (autoFix) {
 		// Set Git committer username and password
-		git.setUserInfo(gitName, gitEmail);
+		//git.setUserInfo(gitName, gitEmail);
 	}
 	if (isPullRequest) {
 		// Fetch and check out PR branch:

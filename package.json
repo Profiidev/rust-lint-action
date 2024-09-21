@@ -1,5 +1,5 @@
 {
-	"name": "lint-action",
+	"name": "rust-lint-action",
 	"version": "2.3.0",
 	"description": "GitHub Action for detecting and fixing linting errors for rust",
 	"repository": "github:wearerequired/lint-action",
