@@ -1,5 +1,7 @@
 # ✨ Lint Action
 
+forked from https://github.com/wearerequired/lint-action
+
 - **Shows linting errors** on GitHub commits and PRs
 - Allows **auto-fixing** issues
 - Supports [many linters and formatters](#supported-tools)
