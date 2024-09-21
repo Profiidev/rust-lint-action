@@ -82,10 +82,10 @@ function pushChanges(skipVerification) {
  * @param {string} name - Git username
  * @param {string} email - Git email address
  */
-function setUserInfo(name, email) {
+function setUserInfo() {
 	core.info(`Setting Git user information`);
-	run(`git config --global user.name "${name}"`);
-	run(`git config --global user.email "${email}"`);
+	run(`git config --global user.name "GitHub Action"`);
+	run(`git config --global user.email "action@github.com"`);
 }
 
 module.exports = {
