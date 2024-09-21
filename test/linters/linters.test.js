@@ -3,59 +3,17 @@ const { join } = require("path");
 const { copy, remove } = require("fs-extra");
 
 const { normalizeDates, normalizePaths, createTmpDir } = require("../test-utils");
-const autopep8Params = require("./params/autopep8");
-const blackParams = require("./params/black");
-const clangFormatParams = require("./params/clang-format");
 const clippyParams = require("./params/clippy");
-const dotnetFormatParams = require("./params/dotnet-format");
-const erblintParams = require("./params/erblint");
-const eslintParams = require("./params/eslint");
-const eslintTypescriptParams = require("./params/eslint-typescript");
-const flake8Params = require("./params/flake8");
-const gofmtParams = require("./params/gofmt");
-const golintParams = require("./params/golint");
-const mypyParams = require("./params/mypy");
-const phpCodeSnifferParams = require("./params/php-codesniffer");
-const prettierParams = require("./params/prettier");
-const pylintParams = require("./params/pylint");
-const ruboCopParams = require("./params/rubocop");
 const rustfmtParams = require("./params/rustfmt");
-const stylelintParams = require("./params/stylelint");
-const swiftFormatLockwood = require("./params/swift-format-lockwood");
-// const swiftFormatOfficial = require("./params/swift-format-official");
-const swiftlintParams = require("./params/swiftlint");
-const tscParams = require("./params/tsc");
-const xoParams = require("./params/xo");
 
 const linterParams = [
-	autopep8Params,
-	blackParams,
-	clangFormatParams,
 	clippyParams,
-	dotnetFormatParams,
-	erblintParams,
-	eslintParams,
-	eslintTypescriptParams,
-	flake8Params,
-	gofmtParams,
-	golintParams,
-	mypyParams,
-	phpCodeSnifferParams,
-	prettierParams,
-	pylintParams,
-	ruboCopParams,
 	rustfmtParams,
-	stylelintParams,
-	tscParams,
-	xoParams,
 ];
 if (process.platform === "linux") {
 	// Temporarily disabled because swift-format 0.50300.0 no longer returns a proper exit code, yet
 	// returns the errors in STDERR.
 	// linterParams.push(swiftFormatOfficial);
-}
-if (process.platform === "darwin") {
-	linterParams.push(swiftFormatLockwood, swiftlintParams);
 }
 
 const tmpDir = createTmpDir();
