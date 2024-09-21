@@ -18,8 +18,6 @@ async function runAction() {
 	const commit = core.getInput("commit") === "true";
 	const skipVerification = core.getInput("git_no_verify") === "true";
 	const continueOnError = core.getInput("continue_on_error") === "true";
-	const gitName = core.getInput("git_name", { required: true });
-	const gitEmail = core.getInput("git_email", { required: true });
 	const commitMessage = core.getInput("commit_message", { required: true });
 	const checkName = core.getInput("check_name", { required: true });
 	const neutralCheckOnWarning = core.getInput("neutral_check_on_warning") === "true";
