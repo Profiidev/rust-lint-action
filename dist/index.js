@@ -3831,7 +3831,7 @@ const { useYarn } = __nccwpck_require__(1753);
  * appended to this command
  */
 function getNpmBinCommand(pkgRoot) {
-	return useYarn(pkgRoot) ? "yarn run --silent" : "npx --no-install";
+	return useYarn(pkgRoot) ? "yarn run --silent" : "npx -p";
 }
 
 module.exports = { getNpmBinCommand };
