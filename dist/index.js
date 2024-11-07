@@ -3354,13 +3354,106 @@ module.exports = Clippy;
 
 const Clippy = __nccwpck_require__(244);
 const RustFmt = __nccwpck_require__(3421);
+const TSC = __nccwpck_require__(7540);
+const Prettier = __nccwpck_require__(3460);
 
 const linters = {
-	// Linters
 	clippy: Clippy,
 	rustfmt: RustFmt,
+	tsc: TSC,
+	prettier: Prettier,
 };
 module.exports = linters;
+
+
+/***/ }),
+
+/***/ 3460:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const { run } = __nccwpck_require__(9575);
+const commandExists = __nccwpck_require__(5265);
+const { initLintResult } = __nccwpck_require__(9149);
+const { getNpmBinCommand } = __nccwpck_require__(1838);
+
+/** @typedef {import('../utils/lint-result').LintResult} LintResult */
+
+/**
+ * https://prettier.io
+ */
+class Prettier {
+	static get name() {
+		return "Prettier";
+	}
+
+	/**
+	 * Verifies that all required programs are installed. Throws an error if programs are missing
+	 * @param {string} dir - Directory to run the linting program in
+	 * @param {string} prefix - Prefix to the lint command
+	 */
+	static async verifySetup(dir, prefix = "") {
+		// Verify that NPM is installed (required to execute Prettier)
+		if (!(await commandExists("npm"))) {
+			throw new Error("NPM is not installed");
+		}
+
+		// Verify that Prettier is installed
+		const commandPrefix = prefix || getNpmBinCommand(dir);
+		try {
+			run(`${commandPrefix} prettier -v`, { dir });
+		} catch (err) {
+			throw new Error(`${this.name} is not installed`);
+		}
+	}
+
+	/**
+	 * Runs the linting program and returns the command output
+	 * @param {string} dir - Directory to run the linter in
+	 * @param {string[]} extensions - File extensions which should be linted
+	 * @param {string} args - Additional arguments to pass to the linter
+	 * @param {boolean} fix - Whether the linter should attempt to fix code style issues automatically
+	 * @param {string} prefix - Prefix to the lint command
+	 * @returns {{status: number, stdout: string, stderr: string}} - Output of the lint command
+	 */
+	static lint(dir, extensions, args = "", fix = false, prefix = "") {
+		const files =
+			extensions.length === 1 ? `**/*.${extensions[0]}` : `**/*.{${extensions.join(",")}}`;
+		const fixArg = fix ? "--write" : "--list-different";
+		const commandPrefix = prefix || getNpmBinCommand(dir);
+		return run(`${commandPrefix} prettier ${fixArg} --no-color ${args} "${files}"`, {
+			dir,
+			ignoreErrors: true,
+		});
+	}
+
+	/**
+	 * Parses the output of the lint command. Determines the success of the lint process and the
+	 * severity of the identified code style violations
+	 * @param {string} dir - Directory in which the linter has been run
+	 * @param {{status: number, stdout: string, stderr: string}} output - Output of the lint command
+	 * @returns {LintResult} - Parsed lint result
+	 */
+	static parseOutput(dir, output) {
+		const lintResult = initLintResult();
+		lintResult.isSuccess = output.status === 0;
+		if (lintResult.isSuccess || !output) {
+			return lintResult;
+		}
+
+		const paths = output.stdout.split(/\r?\n/);
+		lintResult.error = paths.map((path) => ({
+			path,
+			firstLine: 1,
+			lastLine: 1,
+			message:
+				"There are issues with this file's formatting, please run Prettier to fix the errors",
+		}));
+
+		return lintResult;
+	}
+}
+
+module.exports = Prettier;
 
 
 /***/ }),
@@ -3450,6 +3543,112 @@ class RustFmt {
 }
 
 module.exports = RustFmt;
+
+
+/***/ }),
+
+/***/ 7540:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const core = __nccwpck_require__(2186);
+
+const { run } = __nccwpck_require__(9575);
+const commandExists = __nccwpck_require__(5265);
+const { initLintResult } = __nccwpck_require__(9149);
+const { getNpmBinCommand } = __nccwpck_require__(1838);
+const { removeTrailingPeriod } = __nccwpck_require__(9321);
+
+/** @typedef {import('../utils/lint-result').LintResult} LintResult */
+
+/**
+ * https://www.typescriptlang.org/docs/handbook/compiler-options.html
+ */
+class TSC {
+	static get name() {
+		return "TypeScript";
+	}
+
+	/**
+	 * Verifies that all required programs are installed. Throws an error if programs are missing
+	 * @param {string} dir - Directory to run the linting program in
+	 * @param {string} prefix - Prefix to the lint command
+	 */
+	static async verifySetup(dir, prefix = "") {
+		// Verify that NPM is installed (required to execute ESLint)
+		if (!(await commandExists("npm"))) {
+			throw new Error("NPM is not installed");
+		}
+
+		// Verify that ESLint is installed
+		const commandPrefix = prefix || getNpmBinCommand(dir);
+		try {
+			run(`${commandPrefix} tsc -v`, { dir });
+		} catch (err) {
+			throw new Error(`${this.name} is not installed`);
+		}
+	}
+
+	/**
+	 * Runs the linting program and returns the command output
+	 * @param {string} dir - Directory to run the linter in
+	 * @param {string[]} extensions - File extensions which should be linted
+	 * @param {string} args - Additional arguments to pass to the linter
+	 * @param {boolean} fix - Whether the linter should attempt to fix code style issues automatically
+	 * @param {string} prefix - Prefix to the lint command
+	 * @returns {{status: number, stdout: string, stderr: string}} - Output of the lint command
+	 */
+	static lint(dir, extensions, args = "", fix = false, prefix = "") {
+		if (fix) {
+			core.warning(`${this.name} does not support auto-fixing`);
+		}
+
+		const commandPrefix = prefix || getNpmBinCommand(dir);
+		return run(`${commandPrefix} tsc --noEmit --pretty false ${args}`, {
+			dir,
+			ignoreErrors: true,
+		});
+	}
+
+	/**
+	 * Parses the output of the lint command. Determines the success of the lint process and the
+	 * severity of the identified code style violations
+	 * @param {string} dir - Directory in which the linter has been run
+	 * @param {{status: number, stdout: string, stderr: string}} output - Output of the lint command
+	 * @returns {LintResult} - Parsed lint result
+	 */
+	static parseOutput(dir, output) {
+		const lintResult = initLintResult();
+		lintResult.isSuccess = output.status === 0;
+
+		// example: file1.ts(4,25): error TS7005: Variable 'str' implicitly has an 'any' type.
+		const regex = /^(?<file>.+)\((?<line>\d+),(?<column>\d+)\):\s(?<code>\w+)\s(?<message>.+)$/gm;
+
+		const errors = [];
+		const matches = output.stdout.matchAll(regex);
+
+		for (const match of matches) {
+			const { file, line, column, code, message } = match.groups;
+			errors.push({ file, line, column, code, message });
+		}
+
+		for (const error of errors) {
+			const { file, line, message } = error;
+
+			const entry = {
+				path: file,
+				firstLine: Number(line),
+				lastLine: Number(line),
+				message: `${removeTrailingPeriod(message)}`,
+			};
+
+			lintResult.error.push(entry);
+		}
+
+		return lintResult;
+	}
+}
+
+module.exports = TSC;
 
 
 /***/ }),
@@ -3616,6 +3815,52 @@ module.exports = {
 	getSummary,
 	initLintResult,
 };
+
+
+/***/ }),
+
+/***/ 1838:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const { useYarn } = __nccwpck_require__(1753);
+
+/**
+ * Returns the NPM or Yarn command ({@see useYarn()}) for executing an NPM binary
+ * @param {string} [pkgRoot] - Package directory (directory where Yarn lockfile would exist)
+ * @returns {string} - NPM/Yarn command for executing the NPM binary. The binary name should be
+ * appended to this command
+ */
+function getNpmBinCommand(pkgRoot) {
+	return useYarn(pkgRoot) ? "yarn run --silent" : "npx --no-install";
+}
+
+module.exports = { getNpmBinCommand };
+
+
+/***/ }),
+
+/***/ 1753:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const { existsSync } = __nccwpck_require__(7147);
+const { join } = __nccwpck_require__(1017);
+
+const YARN_LOCK_NAME = "yarn.lock";
+
+/**
+ * Determines whether Yarn should be used to execute commands or binaries. This decision is based on
+ * the existence of a Yarn lockfile in the package directory. The distinction between NPM and Yarn
+ * is necessary e.g. for Yarn Plug'n'Play to work
+ * @param {string} [pkgRoot] - Package directory (directory where Yarn lockfile would exist)
+ * @returns {boolean} - Whether Yarn should be used
+ */
+function useYarn(pkgRoot) {
+	// Use an absolute path if `pkgRoot` is specified and a relative one (current directory) otherwise
+	const lockfilePath = pkgRoot ? join(pkgRoot, YARN_LOCK_NAME) : YARN_LOCK_NAME;
+	return existsSync(lockfilePath);
+}
+
+module.exports = { useYarn };
 
 
 /***/ }),
