@@ -3555,7 +3555,6 @@ module.exports = RustFmt;
 const { run } = __nccwpck_require__(9575);
 const commandExists = __nccwpck_require__(5265);
 const { initLintResult } = __nccwpck_require__(9149);
-const core = __nccwpck_require__(2186);
 
 /** @typedef {import('../utils/lint-result').LintResult} LintResult */
 
@@ -3616,15 +3615,13 @@ class Svelte {
 		}
 
 		const lints = output.stdout
-			.split(/\r?\n/)
+			.split(/\n/)
 			.map((lint) => {
-				core.debug(lint);
 				try {
-					return JSON.parse(lint);
+					return JSON.parse(lint.substring(lint.indexOf(" ") + 1));
 				} catch (e) {}
 			})
 			.filter((lint) => {
-				core.debug(lint);
 				return lint;
 			});
 
