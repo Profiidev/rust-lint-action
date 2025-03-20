@@ -3421,7 +3421,7 @@ class Prettier {
 			extensions.length === 1 ? `**/*.${extensions[0]}` : `**/*.{${extensions.join(",")}}`;
 		const fixArg = fix ? "--write" : "--list-different";
 		const commandPrefix = prefix || getNpmBinCommand(dir);
-		return run(`${commandPrefix} --no-install prettier ${fixArg} --no-color ${args} "${files}"`, {
+		return run(`${commandPrefix} prettier ${fixArg} --no-color ${args} "${files}"`, {
 			dir,
 			ignoreErrors: true,
 		});
@@ -3832,7 +3832,7 @@ const { useYarn } = __nccwpck_require__(1753);
  * appended to this command
  */
 function getNpmBinCommand(pkgRoot) {
-	return useYarn(pkgRoot) ? "yarn run --silent" : "npx";
+	return useYarn(pkgRoot) ? "yarn run --silent" : "npx --no-install";
 }
 
 module.exports = { getNpmBinCommand };

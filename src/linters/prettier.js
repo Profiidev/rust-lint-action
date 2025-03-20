@@ -47,7 +47,7 @@ class Prettier {
 			extensions.length === 1 ? `**/*.${extensions[0]}` : `**/*.{${extensions.join(",")}}`;
 		const fixArg = fix ? "--write" : "--list-different";
 		const commandPrefix = prefix || getNpmBinCommand(dir);
-		return run(`${commandPrefix} --no-install prettier ${fixArg} --no-color ${args} "${files}"`, {
+		return run(`${commandPrefix} prettier ${fixArg} --no-color ${args} "${files}"`, {
 			dir,
 			ignoreErrors: true,
 		});

@@ -7,7 +7,7 @@ const { useYarn } = require("./use-yarn");
  * appended to this command
  */
 function getNpmBinCommand(pkgRoot) {
-	return useYarn(pkgRoot) ? "yarn run --silent" : "npx";
+	return useYarn(pkgRoot) ? "yarn run --silent" : "npx --no-install";
 }
 
 module.exports = { getNpmBinCommand };
