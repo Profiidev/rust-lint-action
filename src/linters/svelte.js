@@ -1,6 +1,7 @@
 const { run } = require("../utils/action");
 const commandExists = require("../utils/command-exists");
 const { initLintResult } = require("../utils/lint-result");
+const core = require("@actions/core");
 
 /** @typedef {import('../utils/lint-result').LintResult} LintResult */
 
@@ -63,11 +64,15 @@ class Svelte {
 		const lints = output.stdout
 			.split(/\n/)
 			.map((lint) => {
+				core.debug(lint);
 				try {
 					return JSON.parse(lint);
 				} catch (e) {}
 			})
-			.filter((lint) => lint);
+			.filter((lint) => {
+				core.debug(lint);
+				return lint;
+			});
 
 		lintResult.error = lints
 			.filter((lint) => lint.type === "ERROR")
