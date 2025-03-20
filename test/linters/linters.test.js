@@ -6,10 +6,7 @@ const { normalizeDates, normalizePaths, createTmpDir } = require("../test-utils"
 const clippyParams = require("./params/clippy");
 const rustfmtParams = require("./params/rustfmt");
 
-const linterParams = [
-	clippyParams,
-	rustfmtParams,
-];
+const linterParams = [clippyParams, rustfmtParams];
 if (process.platform === "linux") {
 	// Temporarily disabled because swift-format 0.50300.0 no longer returns a proper exit code, yet
 	// returns the errors in STDERR.

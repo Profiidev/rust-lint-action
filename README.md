@@ -110,10 +110,10 @@ With `auto_fix` set to `true`, by default the action will try and fix code issue
 
 Some options are not available for specific linters:
 
-| Linter                | auto-fixing | extensions |
-| --------------------- | :---------: | :--------: |
-| clippy                |     ✅      |  ❌ (rs)   |
-| rustfmt               |     ✅      |  ❌ (rs)   |
+| Linter  | auto-fixing | extensions |
+| ------- | :---------: | :--------: |
+| clippy  |     ✅      |  ❌ (rs)   |
+| rustfmt |     ✅      |  ❌ (rs)   |
 
 ## Limitations
 
