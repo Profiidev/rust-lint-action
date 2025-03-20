@@ -1,18 +1,12 @@
-const core = require("@actions/core");
-
 const { run } = require("../utils/action");
 const commandExists = require("../utils/command-exists");
 const { initLintResult } = require("../utils/lint-result");
-const { removeTrailingPeriod } = require("../utils/string");
 
 /** @typedef {import('../utils/lint-result').LintResult} LintResult */
 
-/**
- * https://www.typescriptlang.org/docs/handbook/compiler-options.html
- */
-class TSC {
+class Svelte {
 	static get name() {
-		return "TypeScript";
+		return "Svelte";
 	}
 
 	/**
@@ -21,15 +15,15 @@ class TSC {
 	 * @param {string} prefix - Prefix to the lint command
 	 */
 	static async verifySetup(dir, prefix = "") {
-		// Verify that NPM is installed (required to execute ESLint)
+		// Verify that NPM is installed (required to execute Prettier)
 		if (!(await commandExists("npm"))) {
 			throw new Error("NPM is not installed");
 		}
 
-		// Verify that ESLint is installed
-		const commandPrefix = prefix || "npx --no-install";
+		// Verify that SV is installed
+		const commandPrefix = prefix || "npx -y";
 		try {
-			run(`${commandPrefix} tsc -v`, { dir });
+			run(`${commandPrefix} sv -v`, { dir });
 		} catch (err) {
 			throw new Error(`${this.name} is not installed`);
 		}
@@ -45,12 +39,8 @@ class TSC {
 	 * @returns {{status: number, stdout: string, stderr: string}} - Output of the lint command
 	 */
 	static lint(dir, extensions, args = "", fix = false, prefix = "") {
-		if (fix) {
-			core.warning(`${this.name} does not support auto-fixing`);
-		}
-
 		const commandPrefix = prefix || "npx --no-install";
-		return run(`${commandPrefix} tsc --noEmit --pretty false ${args}`, {
+		return run(`${commandPrefix} sv check --output machine-verbose ${args}`, {
 			dir,
 			ignoreErrors: true,
 		});
@@ -66,33 +56,39 @@ class TSC {
 	static parseOutput(dir, output) {
 		const lintResult = initLintResult();
 		lintResult.isSuccess = output.status === 0;
-
-		// example: file1.ts(4,25): error TS7005: Variable 'str' implicitly has an 'any' type.
-		const regex = /^(?<file>.+)\((?<line>\d+),(?<column>\d+)\):\s(?<code>\w+)\s(?<message>.+)$/gm;
-
-		const errors = [];
-		const matches = output.stdout.matchAll(regex);
-
-		for (const match of matches) {
-			const { file, line, column, code, message } = match.groups;
-			errors.push({ file, line, column, code, message });
+		if (lintResult.isSuccess || !output) {
+			return lintResult;
 		}
 
-		for (const error of errors) {
-			const { file, line, message } = error;
+		const lints = output.stdout
+			.split(/\n/)
+			.map((lint) => {
+				try {
+					return JSON.parse(lint);
+				} catch (e) {}
+			})
+			.filter((lint) => lint);
 
-			const entry = {
-				path: file,
-				firstLine: Number(line),
-				lastLine: Number(line),
-				message: `${removeTrailingPeriod(message)}`,
-			};
+		lintResult.error = lints
+			.filter((lint) => lint.type === "ERROR")
+			.map((lint) => ({
+				path: lint.filename,
+				firstLine: lint.start.line,
+				lastLine: lint.end.line,
+				message: lint.message,
+			}));
 
-			lintResult.error.push(entry);
-		}
+		lintResult.warning = lints
+			.filter((lint) => lint.type === "WARNING")
+			.map((lint) => ({
+				path: lint.filename,
+				firstLine: lint.start.line,
+				lastLine: lint.end.line,
+				message: lint.message,
+			}));
 
 		return lintResult;
 	}
 }
 
-module.exports = TSC;
+module.exports = Svelte;

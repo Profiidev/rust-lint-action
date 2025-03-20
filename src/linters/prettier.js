@@ -1,7 +1,6 @@
 const { run } = require("../utils/action");
 const commandExists = require("../utils/command-exists");
 const { initLintResult } = require("../utils/lint-result");
-const { getNpmBinCommand } = require("../utils/npm/get-npm-bin-command");
 
 /** @typedef {import('../utils/lint-result').LintResult} LintResult */
 
@@ -25,7 +24,7 @@ class Prettier {
 		}
 
 		// Verify that Prettier is installed
-		const commandPrefix = prefix || getNpmBinCommand(dir);
+		const commandPrefix = prefix || "npx --no-install";
 		try {
 			run(`${commandPrefix} prettier -v`, { dir });
 		} catch (err) {
@@ -46,7 +45,7 @@ class Prettier {
 		const files =
 			extensions.length === 1 ? `**/*.${extensions[0]}` : `**/*.{${extensions.join(",")}}`;
 		const fixArg = fix ? "--write" : "--list-different";
-		const commandPrefix = prefix || getNpmBinCommand(dir);
+		const commandPrefix = prefix || "npx --no-install";
 		return run(`${commandPrefix} prettier ${fixArg} --no-color ${args} "${files}"`, {
 			dir,
 			ignoreErrors: true,
