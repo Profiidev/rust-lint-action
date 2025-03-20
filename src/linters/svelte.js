@@ -62,7 +62,7 @@ class Svelte {
 		}
 
 		const lints = output.stdout
-			.split(/\n/)
+			.split(/\r?\n/)
 			.map((lint) => {
 				core.debug(lint);
 				try {
