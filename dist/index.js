@@ -2898,9 +2898,15 @@ function checkOutRemoteBranch(context) {
 	run(`git fetch --no-tags --depth=1 ${remote} ${context.branch}`);
 
 	// Switch to remote branch
-	core.info(`Switching to the "${context.branch}" branch`);
-	run(`git branch --force ${context.branch} --track ${remote}/${context.branch}`);
-	run(`git checkout ${context.branch}`);
+
+	if (context.repository.hasFork) {
+		core.info(`Resetting local branch to ${remote}/${context.branch}`);
+		run(`git reset --hard ${remote}/${context.branch}`);
+	} else {
+		core.info(`Switching to the "${context.branch}" branch`);
+		run(`git branch --force ${context.branch} --track ${remote}/${context.branch}`);
+		run(`git checkout ${context.branch}`);
+	}
 }
 
 /**
