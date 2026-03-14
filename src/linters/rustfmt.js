@@ -4,7 +4,7 @@ const { initLintResult } = require("../utils/lint-result");
 
 /** @typedef {import('../utils/lint-result').LintResult} LintResult */
 
-const PARSE_REGEX = /([\s\S]*?) at line (\d*):$([\s\S]*)/m;
+const PARSE_REGEX = /([\s\S]*?):(\d*):$([\s\S]*)/m;
 
 /**
  * https://github.com/rust-lang/rustfmt
