@@ -33,7 +33,7 @@ function checkOutRemoteBranch(context) {
 
 	// Switch to remote branch
 
-	if (context.repository.hasFork) {
+	if (context.repository.hasFork || context.eventName === "pull_request_target") {
 		core.info(`Resetting local branch to ${remote}/${context.branch}`);
 		run(`git reset --hard ${remote}/${context.branch}`);
 	} else {

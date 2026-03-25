@@ -2899,7 +2899,7 @@ function checkOutRemoteBranch(context) {
 
 	// Switch to remote branch
 
-	if (context.repository.hasFork) {
+	if (context.repository.hasFork || context.eventName === "pull_request_target") {
 		core.info(`Resetting local branch to ${remote}/${context.branch}`);
 		run(`git reset --hard ${remote}/${context.branch}`);
 	} else {
@@ -3475,7 +3475,7 @@ const { initLintResult } = __nccwpck_require__(9149);
 
 /** @typedef {import('../utils/lint-result').LintResult} LintResult */
 
-const PARSE_REGEX = /([\s\S]*?) at line (\d*):$([\s\S]*)/m;
+const PARSE_REGEX = /([\s\S]*?):(\d*):$([\s\S]*)/m;
 
 /**
  * https://github.com/rust-lang/rustfmt
