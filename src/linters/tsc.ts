@@ -70,6 +70,7 @@ export default class TSC {
     dir: string,
     output: { status: number | null; stdout: string; stderr: string }
   ): LintResult {
+    core.info(JSON.stringify(output));
     const lintResult = initLintResult();
     lintResult.isSuccess = output.status === 0;
 
