@@ -160,7 +160,6 @@ inputs:
     required: false
     default: 'false'
 
-
   # OxFmt
 
   oxfmt:

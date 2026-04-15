@@ -8,7 +8,7 @@ on:
       - main
   push:
     tags:
-      - "v*.*.*"
+      - 'v*.*.*'
 
 jobs:
   create-release-tag:

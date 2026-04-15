@@ -35,7 +35,7 @@ const linters: Record<string, Linter> = {
   tsc: TSC,
   prettier: Prettier,
   svelte: Svelte,
-  oxfmt: OxFmt,
+  oxfmt: OxFmt
 };
 
 export default linters;
