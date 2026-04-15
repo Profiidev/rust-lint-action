@@ -1,13 +1,20 @@
-const parseDiff = require("parse-diff");
+import parseDiff from "parse-diff";
+
+interface DiffError {
+	path: string | undefined;
+	firstLine: number;
+	lastLine: number;
+	message: string;
+}
 
 /**
  * Parses linting errors from a unified diff
  * @param {string} diff - Unified diff
- * @returns {{path: string, firstLine: number, lastLine: number, message: string}[]} - Array of
+ * @returns {DiffError[]} - Array of
  * parsed errors
  */
-function parseErrorsFromDiff(diff) {
-	const errors = [];
+export function parseErrorsFromDiff(diff: string): DiffError[] {
+	const errors: DiffError[] = [];
 	const files = parseDiff(diff);
 	for (const file of files) {
 		const { chunks, to: path } = file;
@@ -24,7 +31,3 @@ function parseErrorsFromDiff(diff) {
 	}
 	return errors;
 }
-
-module.exports = {
-	parseErrorsFromDiff,
-};

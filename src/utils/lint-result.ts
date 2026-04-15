@@ -1,16 +1,34 @@
 /**
- * Lint result object.
- * @typedef LintResult
- * @property {boolean} isSuccess Whether the result is success.
- * @property {object[]} warning Warnings.
- * @property {object[]} error Errors.
+ * A single linting issue (error or warning).
  */
+export interface LintIssue {
+	/** Path to the file containing the issue. */
+	path: string;
+	/** First line of the issue. */
+	firstLine: number;
+	/** Last line of the issue. */
+	lastLine: number;
+	/** Issue message. */
+	message: string;
+}
+
+/**
+ * Lint result object.
+ */
+export interface LintResult {
+	/** Whether the result is success. */
+	isSuccess: boolean;
+	/** Warnings. */
+	warning: LintIssue[];
+	/** Errors. */
+	error: LintIssue[];
+}
 
 /**
  * Returns an object for storing linting results
  * @returns {LintResult} - Default object
  */
-function initLintResult() {
+export function initLintResult(): LintResult {
 	return {
 		isSuccess: true, // Usually determined by the exit code of the linting command
 		warning: [],
@@ -20,11 +38,10 @@ function initLintResult() {
 
 /**
  * Returns a text summary of the number of issues found when linting
- * @param {LintResult} lintResult - Parsed linter
- * output
+ * @param {LintResult} lintResult - Parsed linter output
  * @returns {string} - Text summary
  */
-function getSummary(lintResult) {
+export function getSummary(lintResult: LintResult): string {
 	const nrErrors = lintResult.error.length;
 	const nrWarnings = lintResult.warning.length;
 	// Build and log a summary of linting errors/warnings
@@ -39,10 +56,5 @@ function getSummary(lintResult) {
 	if (nrWarnings > 0) {
 		return `${nrWarnings} warning${nrWarnings > 1 ? "s" : ""}`;
 	}
-	return `no issues`;
+	return "no issues";
 }
-
-module.exports = {
-	getSummary,
-	initLintResult,
-};

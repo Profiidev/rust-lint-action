@@ -1,15 +1,14 @@
-const core = require("@actions/core");
+import * as core from "@actions/core";
 
-const { run } = require("./utils/action");
-
-/** @typedef {import('./github/context').GithubContext} GithubContext */
+import { run } from "./utils/action";
+import { GithubContext } from "./github/context";
 
 /**
  * Fetches and checks out the remote Git branch (if it exists, the fork repository will be used)
  * @param {GithubContext} context - Information about the GitHub
  */
-function checkOutRemoteBranch(context) {
-	if (context.repository.hasFork) {
+export function checkOutRemoteBranch(context: GithubContext): void {
+	if (context.repository.hasFork && context.repository.forkCloneUrl) {
 		// Fork: Add fork repo as remote
 		core.info(`Adding "${context.repository.forkName}" fork as remote with Git`);
 		const cloneURl = new URL(context.repository.forkCloneUrl);
@@ -48,7 +47,7 @@ function checkOutRemoteBranch(context) {
  * @param {string} message - Git commit message
  * @param {boolean} skipVerification - Skip Git verification
  */
-function commitChanges(message, skipVerification) {
+export function commitChanges(message: string, skipVerification: boolean): void {
 	core.info(`Committing changes`);
 	run(`git commit -am "${message}"${skipVerification ? " --no-verify" : ""}`);
 }
@@ -57,8 +56,8 @@ function commitChanges(message, skipVerification) {
  * Returns the SHA of the head commit
  * @returns {string} - Head SHA
  */
-function getHeadSha() {
-	const sha = run("git rev-parse HEAD").stdout;
+export function getHeadSha(): string {
+	const sha = run("git rev-parse HEAD").stdout.trim();
 	core.info(`SHA of last commit is "${sha}"`);
 	return sha;
 }
@@ -67,7 +66,7 @@ function getHeadSha() {
  * Checks whether there are differences from HEAD
  * @returns {boolean} - Boolean indicating whether changes exist
  */
-function hasChanges() {
+export function hasChanges(): boolean {
 	const output = run("git diff-index --name-status --exit-code HEAD --", { ignoreErrors: true });
 	const hasChangedFiles = output.status === 1;
 	core.info(`${hasChangedFiles ? "Changes" : "No changes"} found with Git`);
@@ -78,27 +77,16 @@ function hasChanges() {
  * Pushes all changes to the remote repository
  * @param {boolean} skipVerification - Skip Git verification
  */
-function pushChanges(skipVerification) {
+export function pushChanges(skipVerification: boolean): void {
 	core.info("Pushing changes with Git");
 	run(`git push${skipVerification ? " --no-verify" : ""}`);
 }
 
 /**
  * Updates the global Git configuration with the provided information
- * @param {string} name - Git username
- * @param {string} email - Git email address
  */
-function setUserInfo() {
+export function setUserInfo(): void {
 	core.info(`Setting Git user information`);
 	run(`git config --global user.name "GitHub Action"`);
 	run(`git config --global user.email "action@github.com"`);
 }
-
-module.exports = {
-	checkOutRemoteBranch,
-	commitChanges,
-	getHeadSha,
-	hasChanges,
-	pushChanges,
-	setUserInfo,
-};

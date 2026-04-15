@@ -1,11 +1,10 @@
-const core = require("@actions/core");
+import * as core from "@actions/core";
 
-const { name: actionName } = require("../../package.json");
-const request = require("../utils/request");
-const { capitalizeFirstLetter } = require("../utils/string");
-
-/** @typedef {import('./context').GithubContext} GithubContext */
-/** @typedef {import('../utils/lint-result').LintResult} LintResult */
+import { name as actionName } from "../../package.json";
+import { GithubContext } from "./context";
+import { LintResult } from "../utils/lint-result";
+import request, { RequestOptions } from "../utils/request";
+import { capitalizeFirstLetter } from "../utils/string";
 
 /**
  * Creates a new check on GitHub which annotates the relevant commit with linting errors
@@ -18,9 +17,16 @@ const { capitalizeFirstLetter } = require("../utils/string");
  * there are only warnings
  * @param {string} summary - Summary for the GitHub check
  */
-async function createCheck(linterName, sha, context, lintResult, neutralCheckOnWarning, summary) {
-	let annotations = [];
-	for (const level of ["error", "warning"]) {
+export async function createCheck(
+	linterName: string,
+	sha: string,
+	context: GithubContext,
+	lintResult: LintResult,
+	neutralCheckOnWarning: boolean,
+	summary: string,
+): Promise<void> {
+	let annotations: any[] = [];
+	for (const level of ["error", "warning"] as const) {
 		annotations = [
 			...annotations,
 			...lintResult[level].map((result) => ({
@@ -41,7 +47,7 @@ async function createCheck(linterName, sha, context, lintResult, neutralCheckOnW
 		annotations = annotations.slice(0, 50);
 	}
 
-	let conclusion;
+	let conclusion: "neutral" | "success" | "failure";
 	if (lintResult.isSuccess) {
 		if (annotations.length > 0 && neutralCheckOnWarning) {
 			conclusion = "neutral";
@@ -79,7 +85,7 @@ async function createCheck(linterName, sha, context, lintResult, neutralCheckOnW
 			body,
 		});
 		core.info(`${linterName} check created successfully`);
-	} catch (err) {
+	} catch (err: any) {
 		let errorMessage = err.message;
 		if (err.data) {
 			try {
@@ -99,5 +105,3 @@ async function createCheck(linterName, sha, context, lintResult, neutralCheckOnW
 		throw new Error(`Error trying to create GitHub check for ${linterName}: ${errorMessage}`);
 	}
 }
-
-module.exports = { createCheck };

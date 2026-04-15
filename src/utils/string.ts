@@ -3,7 +3,7 @@
  * @param {string} str - String to process
  * @returns {string} - Input string with first letter capitalized
  */
-function capitalizeFirstLetter(str) {
+export function capitalizeFirstLetter(str: string): string {
 	return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
@@ -12,11 +12,6 @@ function capitalizeFirstLetter(str) {
  * @param {string} str - String to process
  * @returns {string} - String without trailing period
  */
-function removeTrailingPeriod(str) {
+export function removeTrailingPeriod(str: string): string {
 	return str[str.length - 1] === "." ? str.substring(0, str.length - 1) : str;
 }
-
-module.exports = {
-	capitalizeFirstLetter,
-	removeTrailingPeriod,
-};

@@ -1,12 +1,25 @@
-const https = require("https");
+import { IncomingMessage } from "http";
+import * as https from "https";
+
+export interface RequestOptions extends https.RequestOptions {
+	body?: any;
+}
+
+interface RequestResponse {
+	res: IncomingMessage;
+	data: any;
+}
 
 /**
  * Helper function for making HTTP requests
  * @param {string | URL} url - Request URL
- * @param {object} options - Request options
- * @returns {Promise<object>} - JSON response
+ * @param {RequestOptions} options - Request options
+ * @returns {Promise<RequestResponse>} - JSON response
  */
-function request(url, options) {
+export default function request(
+	url: string | URL,
+	options: RequestOptions,
+): Promise<RequestResponse> {
 	return new Promise((resolve, reject) => {
 		const req = https
 			.request(url, options, (res) => {
@@ -15,8 +28,8 @@ function request(url, options) {
 					data += chunk;
 				});
 				res.on("end", () => {
-					if (res.statusCode >= 400) {
-						const err = new Error(`Received status code ${res.statusCode}`);
+					if (res.statusCode != null && res.statusCode >= 400) {
+						const err = new Error(`Received status code ${res.statusCode}`) as any;
 						err.response = res;
 						err.data = data;
 						reject(err);
@@ -33,5 +46,3 @@ function request(url, options) {
 		}
 	});
 }
-
-module.exports = request;

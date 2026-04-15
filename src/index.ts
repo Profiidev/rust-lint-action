@@ -1,18 +1,22 @@
-const { existsSync } = require("fs");
-const { join } = require("path");
+import { existsSync } from "fs";
+import { join } from "path";
+import * as core from "@actions/core";
+import * as git from "./git";
+import { createCheck } from "./github/api";
+import { getContext } from "./github/context";
+import linters, { Linter } from "./linters";
+import { getSummary, LintResult } from "./utils/lint-result";
 
-const core = require("@actions/core");
-
-const git = require("./git");
-const { createCheck } = require("./github/api");
-const { getContext } = require("./github/context");
-const linters = require("./linters");
-const { getSummary } = require("./utils/lint-result");
+interface Check {
+	lintCheckName: string;
+	lintResult: LintResult;
+	summary: string;
+}
 
 /**
  * Parses the action configuration and runs all enabled linters on matching files
  */
-async function runAction() {
+async function runAction(): Promise<void> {
 	const context = getContext();
 	const autoFix = core.getInput("auto_fix") === "true";
 	const commit = core.getInput("commit") === "true";
@@ -56,13 +60,13 @@ async function runAction() {
 	let headSha = git.getHeadSha();
 
 	let hasFailures = false;
-	const checks = [];
+	const checks: Check[] = [];
 
 	// Loop over all available linters
-	for (const [linterId, linter] of Object.entries(linters)) {
+	for (const [linterId, linter] of Object.entries(linters) as [string, Linter][]) {
 		// Determine whether the linter should be executed on the commit
 		if (core.getInput(linterId) === "true") {
-			core.startGroup(`Run ${linter.name}`);
+			core.startGroup(`Run ${linter.linterName}`);
 
 			const fileExtensions = core.getInput(`${linterId}_extensions`, { required: true });
 			const args = core.getInput(`${linterId}_args`);
@@ -72,22 +76,22 @@ async function runAction() {
 			const linterAutoFix = autoFix && core.getInput(`${linterId}_auto_fix`) === "true";
 
 			if (!existsSync(lintDirAbs)) {
-				throw new Error(`Directory ${lintDirAbs} for ${linter.name} doesn't exist`);
+				throw new Error(`Directory ${lintDirAbs} for ${linter.linterName} doesn't exist`);
 			}
 
 			// Check that the linter and its dependencies are installed
-			core.info(`Verifying setup for ${linter.name}…`);
+			core.info(`Verifying setup for ${linter.linterName}…`);
 			await linter.verifySetup(lintDirAbs, prefix);
-			core.info(`Verified ${linter.name} setup`);
+			core.info(`Verified ${linter.linterName} setup`);
 
 			// Determine which files should be linted
 			const fileExtList = fileExtensions.split(",");
-			core.info(`Will use ${linter.name} to check the files with extensions ${fileExtList}`);
+			core.info(`Will use ${linter.linterName} to check the files with extensions ${fileExtList}`);
 
 			// Lint and optionally auto-fix the matching files, parse code style violations
 			core.info(
 				`Linting ${linterAutoFix ? "and auto-fixing " : ""}files in ${lintDirAbs} ` +
-					`with ${linter.name} ${args ? `and args: ${args}` : ""}…`,
+					`with ${linter.linterName} ${args ? `and args: ${args}` : ""}…`,
 			);
 			const lintOutput = linter.lint(lintDirAbs, fileExtList, args, linterAutoFix, prefix);
 
@@ -95,7 +99,7 @@ async function runAction() {
 			const lintResult = linter.parseOutput(context.workspace, lintOutput);
 			const summary = getSummary(lintResult);
 			core.info(
-				`${linter.name} found ${summary} (${lintResult.isSuccess ? "success" : "failure"})`,
+				`${linter.linterName} found ${summary} (${lintResult.isSuccess ? "success" : "failure"})`,
 			);
 
 			if (!lintResult.isSuccess) {
@@ -105,13 +109,16 @@ async function runAction() {
 			if (linterAutoFix && commit) {
 				// Commit and push auto-fix changes
 				if (git.hasChanges()) {
-					git.commitChanges(commitMessage.replace(/\${linter}/g, linter.name), skipVerification);
+					git.commitChanges(
+						commitMessage.replace(/\${linter}/g, linter.linterName),
+						skipVerification,
+					);
 					git.pushChanges(skipVerification);
 				}
 			}
 
 			const lintCheckName = checkName
-				.replace(/\${linter}/g, linter.name)
+				.replace(/\${linter}/g, linter.linterName)
 				.replace(/\${dir}/g, lintDirRel !== "." ? `${lintDirRel}` : "")
 				.trim();
 
@@ -150,7 +157,7 @@ async function runAction() {
 	}
 }
 
-runAction().catch((error) => {
+runAction().catch((error: Error) => {
 	core.debug(error.stack || "No error stack trace");
 	core.setFailed(error.message);
 });

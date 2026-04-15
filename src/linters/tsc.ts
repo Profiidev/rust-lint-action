@@ -1,26 +1,23 @@
-const core = require("@actions/core");
-
-const { run } = require("../utils/action");
-const commandExists = require("../utils/command-exists");
-const { initLintResult } = require("../utils/lint-result");
-const { removeTrailingPeriod } = require("../utils/string");
-
-/** @typedef {import('../utils/lint-result').LintResult} LintResult */
+import * as core from "@actions/core";
+import { run } from "../utils/action";
+import commandExists from "../utils/command-exists";
+import { initLintResult, LintResult } from "../utils/lint-result";
+import { removeTrailingPeriod } from "../utils/string";
 
 /**
  * https://www.typescriptlang.org/docs/handbook/compiler-options.html
  */
-class TSC {
-	static get name() {
+export default class TSC {
+	static get linterName(): string {
 		return "TypeScript";
 	}
 
 	/**
 	 * Verifies that all required programs are installed. Throws an error if programs are missing
-	 * @param {string} dir - Directory to run the linting program in
-	 * @param {string} prefix - Prefix to the lint command
+	 * @param dir - Directory to run the linting program in
+	 * @param prefix - Prefix to the lint command
 	 */
-	static async verifySetup(dir, prefix = "") {
+	static async verifySetup(dir: string, prefix = ""): Promise<void> {
 		// Verify that NPM is installed (required to execute ESLint)
 		if (!(await commandExists("npm"))) {
 			throw new Error("NPM is not installed");
@@ -31,22 +28,28 @@ class TSC {
 		try {
 			run(`${commandPrefix} tsc -v`, { dir });
 		} catch (err) {
-			throw new Error(`${this.name} is not installed`);
+			throw new Error(`${this.linterName} is not installed`);
 		}
 	}
 
 	/**
 	 * Runs the linting program and returns the command output
-	 * @param {string} dir - Directory to run the linter in
-	 * @param {string[]} extensions - File extensions which should be linted
-	 * @param {string} args - Additional arguments to pass to the linter
-	 * @param {boolean} fix - Whether the linter should attempt to fix code style issues automatically
-	 * @param {string} prefix - Prefix to the lint command
-	 * @returns {{status: number, stdout: string, stderr: string}} - Output of the lint command
+	 * @param dir - Directory to run the linter in
+	 * @param extensions - File extensions which should be linted
+	 * @param args - Additional arguments to pass to the linter
+	 * @param fix - Whether the linter should attempt to fix code style issues automatically
+	 * @param prefix - Prefix to the lint command
+	 * @returns Output of the lint command
 	 */
-	static lint(dir, extensions, args = "", fix = false, prefix = "") {
+	static lint(
+		dir: string,
+		extensions: string[],
+		args = "",
+		fix = false,
+		prefix = "",
+	): { status: number | null; stdout: string; stderr: string } {
 		if (fix) {
-			core.warning(`${this.name} does not support auto-fixing`);
+			core.warning(`${this.linterName} does not support auto-fixing`);
 		}
 
 		const commandPrefix = prefix || "npx --no-install";
@@ -59,11 +62,14 @@ class TSC {
 	/**
 	 * Parses the output of the lint command. Determines the success of the lint process and the
 	 * severity of the identified code style violations
-	 * @param {string} dir - Directory in which the linter has been run
-	 * @param {{status: number, stdout: string, stderr: string}} output - Output of the lint command
-	 * @returns {LintResult} - Parsed lint result
+	 * @param dir - Directory in which the linter has been run
+	 * @param output - Output of the lint command
+	 * @returns Parsed lint result
 	 */
-	static parseOutput(dir, output) {
+	static parseOutput(
+		dir: string,
+		output: { status: number | null; stdout: string; stderr: string },
+	): LintResult {
 		const lintResult = initLintResult();
 		lintResult.isSuccess = output.status === 0;
 
@@ -74,7 +80,7 @@ class TSC {
 		const matches = output.stdout.matchAll(regex);
 
 		for (const match of matches) {
-			const { file, line, column, code, message } = match.groups;
+			const { file, line, column, code, message } = match.groups as any;
 			errors.push({ file, line, column, code, message });
 		}
 
@@ -94,5 +100,3 @@ class TSC {
 		return lintResult;
 	}
 }
-
-module.exports = TSC;

@@ -1,8 +1,13 @@
-const { execSync } = require("child_process");
+import { execSync } from "child_process";
+import * as core from "@actions/core";
 
-const core = require("@actions/core");
+interface RunOptions {
+	dir?: string | null;
+	ignoreErrors?: boolean;
+	prefix?: string;
+}
 
-const RUN_OPTIONS_DEFAULTS = { dir: null, ignoreErrors: false, prefix: "" };
+const RUN_OPTIONS_DEFAULTS: RunOptions = { dir: null, ignoreErrors: false, prefix: "" };
 
 /**
  * Returns the value for an environment variable. If the variable is required but doesn't have a
@@ -12,7 +17,7 @@ const RUN_OPTIONS_DEFAULTS = { dir: null, ignoreErrors: false, prefix: "" };
  * value
  * @returns {string | null} - Value of the environment variable
  */
-function getEnv(name, required = false) {
+export function getEnv(name: string, required = false): string | null {
 	const nameUppercase = name.toUpperCase();
 	const value = process.env[nameUppercase];
 	if (value == null) {
@@ -28,10 +33,13 @@ function getEnv(name, required = false) {
 /**
  * Executes the provided shell command
  * @param {string} cmd - Shell command to execute
- * @param {{dir: string, ignoreErrors: boolean}} [options] - {@see RUN_OPTIONS_DEFAULTS}
- * @returns {{status: number, stdout: string, stderr: string}} - Output of the shell command
+ * @param {RunOptions} [options] - {@see RUN_OPTIONS_DEFAULTS}
+ * @returns {{status: number | null, stdout: string, stderr: string}} - Output of the shell command
  */
-function run(cmd, options) {
+export function run(
+	cmd: string,
+	options?: RunOptions,
+): { status: number | null; stdout: string; stderr: string } {
 	const optionsWithDefaults = {
 		...RUN_OPTIONS_DEFAULTS,
 		...options,
@@ -42,7 +50,7 @@ function run(cmd, options) {
 	try {
 		const stdout = execSync(cmd, {
 			encoding: "utf8",
-			cwd: optionsWithDefaults.dir,
+			cwd: optionsWithDefaults.dir || undefined,
 			maxBuffer: 20 * 1024 * 1024,
 		});
 		const output = {
@@ -54,12 +62,12 @@ function run(cmd, options) {
 		core.debug(`Stdout: ${output.stdout}`);
 
 		return output;
-	} catch (err) {
+	} catch (err: any) {
 		if (optionsWithDefaults.ignoreErrors) {
 			const output = {
-				status: err.status,
-				stdout: err.stdout.trim(),
-				stderr: err.stderr.trim(),
+				status: err.status as number | null,
+				stdout: (err.stdout || "").toString().trim(),
+				stderr: (err.stderr || "").toString().trim(),
 			};
 
 			core.debug(`Exit code: ${output.status}`);
@@ -71,8 +79,3 @@ function run(cmd, options) {
 		throw err;
 	}
 }
-
-module.exports = {
-	getEnv,
-	run,
-};
