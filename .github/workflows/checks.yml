@@ -1,0 +1,22 @@
+name: Checks and Validation
+on:
+  pull_request:
+
+jobs:
+  linters:
+    name: Run linters
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      contents: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          token: ${{ secrets.PERSONAL_TOKEN }}
+      - uses: bahmutov/npm-install@v1
+      - name: Test Action
+        uses: ./
+        with:
+          auto_fix: true
+          oxfmt: true
+          tsc: true
