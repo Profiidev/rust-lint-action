@@ -177,7 +177,7 @@ inputs:
   oxfmt_extensions:
     description: Extensions of files to check with oxmft
     required: false
-    default: ''
+    default: 'css,html,js,json,jsx,md,sass,scss,ts,tsx,vue,yaml,yml'
   oxfmt_command_prefix:
     description: Shell command to prepend to the linter command. Will default to `npx --no-install` for NPM and `yarn run --silent` for Yarn.
     required: false
