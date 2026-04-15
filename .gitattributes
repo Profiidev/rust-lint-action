@@ -1,5 +1,0 @@
-* text=auto eol=lf
-
-# Exclude test and build files in project's language stats
-dist/* linguist-generated
-test/linters/projects/** linguist-vendored
