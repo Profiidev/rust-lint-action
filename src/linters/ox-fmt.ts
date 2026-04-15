@@ -2,12 +2,9 @@ import { run } from '../utils/action';
 import commandExists from '../utils/command-exists';
 import { initLintResult, LintResult } from '../utils/lint-result';
 
-/**
- * https://github.com/sveltejs/prettier-plugin-svelte
- */
-export default class Svelte {
+export default class OxFmt {
   static get linterName(): string {
-    return 'svelte';
+    return 'oxfmt';
   }
 
   /**
@@ -16,15 +13,15 @@ export default class Svelte {
    * @param prefix - Prefix to the lint command
    */
   static async verifySetup(dir: string, prefix = ''): Promise<void> {
-    // Verify that NPM is installed (required to execute Prettier)
+    // Verify that NPM is installed (required to execute OxFmt)
     if (!(await commandExists('npm'))) {
-      throw new Error('NPM is not installed');
+      throw new Error('npm is not installed');
     }
 
-    // Verify that SV is installed
-    const commandPrefix = prefix || 'npx -y';
+    // Verify that oxfmt is installed
+    const commandPrefix = prefix || 'npx --no-install';
     try {
-      run(`${commandPrefix} sv -v`, { dir });
+      run(`${commandPrefix} oxfmt --version`, { dir });
     } catch (err) {
       throw new Error(`${this.linterName} is not installed`);
     }
@@ -47,7 +44,8 @@ export default class Svelte {
     prefix = ''
   ): { status: number | null; stdout: string; stderr: string } {
     const commandPrefix = prefix || 'npx --no-install';
-    return run(`${commandPrefix} sv check --output machine-verbose ${args}`, {
+    const fixArg = fix ? '' : '--check';
+    return run(`${commandPrefix} oxfmt ${fixArg} ${args}`, {
       dir,
       ignoreErrors: true
     });
@@ -71,34 +69,29 @@ export default class Svelte {
       return lintResult;
     }
 
-    const lints = output.stdout
-      .split(/\n/)
-      .map((lint) => {
-        try {
-          return JSON.parse(lint.substring(lint.indexOf(' ') + 1));
-        } catch (e) {}
-      })
-      .filter((lint) => {
-        return lint;
+    const lines = output.stdout.split(/\r?\n/);
+
+    const errorPaths = lines
+      .map((line) => line.trim())
+      .filter(
+        (line) =>
+          line.length > 0 &&
+          !line.startsWith('Checking') &&
+          !line.startsWith('Format') &&
+          !line.startsWith('Finished')
+      )
+      .map((line) => {
+        // Extract just the path: "src/file.ts (0ms)" -> "src/file.ts"
+        return line.split(' ')[0];
       });
 
-    lintResult.error = lints
-      .filter((lint) => lint.type === 'ERROR')
-      .map((lint) => ({
-        path: lint.filename,
-        firstLine: lint.start.line,
-        lastLine: lint.end.line,
-        message: lint.message
-      }));
-
-    lintResult.warning = lints
-      .filter((lint) => lint.type === 'WARNING')
-      .map((lint) => ({
-        path: lint.filename,
-        firstLine: lint.start.line,
-        lastLine: lint.end.line,
-        message: lint.message
-      }));
+    lintResult.error = errorPaths.map((path) => ({
+      path,
+      firstLine: 1,
+      lastLine: 1,
+      message:
+        "There are issues with this file's formatting, please run Prettier to fix the errors"
+    }));
 
     return lintResult;
   }

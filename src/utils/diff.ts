@@ -1,10 +1,10 @@
-import parseDiff from "parse-diff";
+import parseDiff from 'parse-diff';
 
 interface DiffError {
-	path: string | undefined;
-	firstLine: number;
-	lastLine: number;
-	message: string;
+  path: string | undefined;
+  firstLine: number;
+  lastLine: number;
+  message: string;
 }
 
 /**
@@ -14,20 +14,20 @@ interface DiffError {
  * parsed errors
  */
 export function parseErrorsFromDiff(diff: string): DiffError[] {
-	const errors: DiffError[] = [];
-	const files = parseDiff(diff);
-	for (const file of files) {
-		const { chunks, to: path } = file;
-		for (const chunk of chunks) {
-			const { oldStart, oldLines, changes } = chunk;
-			const chunkDiff = changes.map((change) => change.content).join("\n");
-			errors.push({
-				path,
-				firstLine: oldStart,
-				lastLine: oldStart + oldLines,
-				message: chunkDiff,
-			});
-		}
-	}
-	return errors;
+  const errors: DiffError[] = [];
+  const files = parseDiff(diff);
+  for (const file of files) {
+    const { chunks, to: path } = file;
+    for (const chunk of chunks) {
+      const { oldStart, oldLines, changes } = chunk;
+      const chunkDiff = changes.map((change) => change.content).join('\n');
+      errors.push({
+        path,
+        firstLine: oldStart,
+        lastLine: oldStart + oldLines,
+        message: chunkDiff
+      });
+    }
+  }
+  return errors;
 }

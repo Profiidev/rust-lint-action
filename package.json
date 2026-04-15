@@ -1,17 +1,16 @@
 {
   "name": "rust-lint-action",
   "version": "2.3.0",
-  "description": "GitHub Action for detecting and fixing linting errors for rust",
-  "repository": "github:wearerequired/lint-action",
-  "license": "MIT",
   "private": true,
+  "description": "GitHub Action for detecting and fixing linting errors for rust",
+  "license": "MIT",
+  "repository": "github:wearerequired/lint-action",
   "main": "./dist/index.js",
   "scripts": {
     "test": "jest",
     "lint": "eslint --max-warnings 0 \"**/*.ts\"",
     "lint:fix": "npm run lint -- --fix",
-    "format": "prettier --list-different \"**/*.{css,html,js,json,jsx,less,md,scss,ts,tsx,vue,yaml,yml}\"",
-    "format:fix": "npm run format -- --write",
+    "format": "oxfmt",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
@@ -26,15 +25,16 @@
     "@types/node": "^25.6.0",
     "fs-extra": "^11.3.4",
     "jest": "^30.3.0",
+    "oxfmt": "^0.45.0",
     "prettier": "^3.8.3",
     "ts-jest": "^29.4.9",
     "typescript": "^6.0.2"
   },
   "jest": {
     "preset": "ts-jest",
-    "testEnvironment": "node",
     "setupFilesAfterEnv": [
       "./test/mock-actions-core.ts"
-    ]
+    ],
+    "testEnvironment": "node"
   }
 }

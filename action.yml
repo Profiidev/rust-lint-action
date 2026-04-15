@@ -10,155 +10,155 @@ inputs:
   continue_on_error:
     description: Whether the workflow run should also fail when linter failures are detected
     required: false
-    default: "true"
+    default: 'true'
   auto_fix:
     description: Whether linters should try to fix code style issues automatically
     required: false
-    default: "false"
+    default: 'false'
   commit:
     description: Whether to commit and push the changes made by auto_fix
     required: false
-    default: "true"
+    default: 'true'
   git_no_verify:
     description: Bypass the pre-commit and pre-push git hooks
     required: false
-    default: "false"
+    default: 'false'
   commit_message:
     description: 'Template for auto-fix commit messages. The "${linter}" variable can be used to insert the name of the linter which has created the auto-fix'
     required: false
-    default: "Fix code style issues with ${linter}"
+    default: 'Fix code style issues with ${linter}'
   check_name:
     description: 'Template for the name of the check run. The "${linter}" and "${dir}" variables can be used to insert the name and directory of the linter.'
     required: false
-    default: "${linter}"
+    default: '${linter}'
   neutral_check_on_warning:
     description: Whether the check run should conclude with a neutral status instead of success when the linter finds only warnings
     required: false
-    default: "false"
+    default: 'false'
 
   # Rust
 
   clippy:
     description: Enable or disable clippy
     required: false
-    default: "false"
+    default: 'false'
   clippy_args:
     description: Additional arguments to pass to the linter
     required: false
-    default: ""
+    default: ''
   clippy_dir:
     description: Directory where the RuboCop command should be run
     required: false
   clippy_extensions:
     description: Extensions of files to check with RuboCop
     required: false
-    default: "rs"
+    default: 'rs'
   clippy_command_prefix:
     description: Shell command to prepend to the linter command
     required: false
-    default: ""
+    default: ''
   clippy_auto_fix:
     description: Whether this linter should try to fix code style issues automatically. If set to `true`, it will only work if "auto_fix" is set to `true` as well
     required: false
-    default: "true"
+    default: 'true'
 
   rustfmt:
     description: Enable or disable rustfmt
     required: false
-    default: "false"
+    default: 'false'
   rustfmt_args:
     description: Additional arguments to pass to the linter
     required: false
-    default: "-- --color=never"
+    default: '-- --color=never'
   rustfmt_extensions:
     description: Extensions of files to check with rustfmt
     required: false
-    default: "rs"
+    default: 'rs'
   rustfmt_dir:
     description: Directory where the rustfmt command should be run
     required: false
   rustfmt_auto_fix:
     description: Whether this linter should try to fix code style issues automatically. If set to `true`, it will only work if "auto_fix" is set to `true` as well
     required: false
-    default: "true"
+    default: 'true'
 
   # JavaScript
 
   prettier:
     description: Enable or disable Prettier checks
     required: false
-    default: "false"
+    default: 'false'
   prettier_args:
     description: Additional arguments to pass to the linter
     required: false
-    default: ""
+    default: ''
   prettier_dir:
     description: Directory where the Prettier command should be run
     required: false
   prettier_extensions:
     description: Extensions of files to check with Prettier
     required: false
-    default: "css,html,js,json,jsx,md,sass,scss,ts,tsx,vue,yaml,yml"
+    default: 'css,html,js,json,jsx,md,sass,scss,ts,tsx,vue,yaml,yml'
   prettier_command_prefix:
     description: Shell command to prepend to the linter command. Will default to `npx --no-install` for NPM and `yarn run --silent` for Yarn.
     required: false
-    default: ""
+    default: ''
   prettier_auto_fix:
     description: Whether this linter should try to fix code style issues automatically. If set to `true`, it will only work if "auto_fix" is set to `true` as well
     required: false
-    default: "true"
+    default: 'true'
 
   # TypeScript
 
   tsc:
     description: Enable or disable TypeScript checks
     required: false
-    default: "false"
+    default: 'false'
   tsc_args:
     description: Additional arguments to pass to the linter
     required: false
-    default: ""
+    default: ''
   tsc_dir:
     description: Directory where the TSC command should be run
     required: false
   tsc_extensions:
     description: Extensions of files to check with TSC
     required: false
-    default: "ts"
+    default: 'ts'
   tsc_command_prefix:
     description: Shell command to prepend to the linter command. Will default to `npx --no-install` for NPM and `yarn run --silent` for Yarn.
     required: false
-    default: ""
+    default: ''
   tsc_auto_fix:
     description: Whether this linter should try to fix code style issues automatically. If set to `true`, it will only work if "auto_fix" is set to `true` as well
     required: false
-    default: "false"
+    default: 'false'
 
   # Svelte
 
   svelte:
     description: Enable or disable Svelte checks
     required: false
-    default: "false"
+    default: 'false'
   svelte_args:
     description: Additional arguments to pass to the linter
     required: false
-    default: ""
+    default: ''
   svelte_dir:
     description: Directory where the Svelte command should be run
     required: false
   svelte_extensions:
     description: Extensions of files to check with Svelte
     required: false
-    default: "svelte"
+    default: 'svelte'
   svelte_command_prefix:
     description: Shell command to prepend to the linter command. Will default to `npx --no-install` for NPM and `yarn run --silent` for Yarn.
     required: false
-    default: ""
+    default: ''
   svelte_auto_fix:
     description: Whether this linter should try to fix code style issues automatically. If set to `true`, it will only work if "auto_fix" is set to `true` as well
     required: false
-    default: "false"
+    default: 'false'
 
 runs:
   using: node20

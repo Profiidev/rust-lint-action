@@ -1,4 +1,4 @@
-import checkForCommand from "command-exists";
+import checkForCommand from 'command-exists';
 
 /**
  * Returns whether the provided shell command is available
@@ -6,12 +6,12 @@ import checkForCommand from "command-exists";
  * @returns {Promise<boolean>} - Whether the command is available
  */
 export default async function commandExists(command: string): Promise<boolean> {
-	// The `command-exists` library throws an error if the command is not available. This function
-	// catches these errors and returns a boolean value instead
-	try {
-		await checkForCommand(command);
-		return true;
-	} catch (error) {
-		return false;
-	}
+  // The `command-exists` library throws an error if the command is not available. This function
+  // catches these errors and returns a boolean value instead
+  try {
+    await checkForCommand(command);
+    return true;
+  } catch (error) {
+    return false;
+  }
 }

@@ -4,7 +4,7 @@
  * @returns {string} - Input string with first letter capitalized
  */
 export function capitalizeFirstLetter(str: string): string {
-	return str.charAt(0).toUpperCase() + str.slice(1);
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 /**
@@ -13,5 +13,5 @@ export function capitalizeFirstLetter(str: string): string {
  * @returns {string} - String without trailing period
  */
 export function removeTrailingPeriod(str: string): string {
-	return str[str.length - 1] === "." ? str.substring(0, str.length - 1) : str;
+  return str[str.length - 1] === '.' ? str.substring(0, str.length - 1) : str;
 }
