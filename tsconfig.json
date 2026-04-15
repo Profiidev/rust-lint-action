@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
-    "types": ["node", "jest"],
+    "types": ["node"],
     "checkJs": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
