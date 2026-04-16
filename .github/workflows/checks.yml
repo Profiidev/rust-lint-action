@@ -23,6 +23,5 @@ jobs:
           auto_fix: true
           oxfmt: true
           tsc: true
-          git_user_name: "profidev-commit-bot[bot]"
-          git_user_email: "profidev-commit-bot[bot]@users.noreply.github.com"
+          git_sign_commits: true
           github_token: ${{ steps.app-token.outputs.token }}
