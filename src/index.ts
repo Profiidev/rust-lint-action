@@ -73,7 +73,7 @@ async function runAction(): Promise<void> {
   const checks: Check[] = [];
 
   // Loop over all available linters
-   for (const [linterId, linter] of Object.entries(linters) as [
+  for (const [linterId, linter] of Object.entries(linters) as [
     string,
     Linter
   ][]) {
