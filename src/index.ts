@@ -29,6 +29,8 @@ async function runAction(): Promise<void> {
   const isPullRequest =
     context.eventName === 'pull_request' ||
     context.eventName === 'pull_request_target';
+  const gitName = core.getInput('git_user_name');
+  const gitEmail = core.getInput('git_user_email');
 
   // If on a PR from fork: Display messages regarding action limitations
   if (context.eventName === 'pull_request' && context.repository.hasFork) {
@@ -44,7 +46,7 @@ async function runAction(): Promise<void> {
 
   if (autoFix) {
     // Set Git committer username and password
-    git.setUserInfo();
+    git.setUserInfo(gitName, gitEmail);
   }
   if (isPullRequest) {
     // Fetch and check out PR branch:

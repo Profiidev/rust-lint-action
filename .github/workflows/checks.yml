@@ -11,8 +11,11 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/create-github-app-token@v3
+        id: app-token
         with:
-          token: ${{ secrets.PERSONAL_TOKEN }}
+          client-id: ${{ vars.COMMIT_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.COMMIT_BOT_PRIVATE_KEY }}
       - uses: bahmutov/npm-install@v1
       - name: Test Action
         uses: ./
@@ -20,3 +23,6 @@ jobs:
           auto_fix: true
           oxfmt: true
           tsc: true
+          git_user_name: "profidev-commit-bot[bot]"
+          git_user_email: "profidev-commit-bot[bot]@users.noreply.github.com"
+          github_token: ${{ steps.app-token.outputs.token }}

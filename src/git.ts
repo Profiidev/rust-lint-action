@@ -97,8 +97,8 @@ export function pushChanges(skipVerification: boolean): void {
 /**
  * Updates the global Git configuration with the provided information
  */
-export function setUserInfo(): void {
+export function setUserInfo(name: string, email: string): void {
   core.info(`Setting Git user information`);
-  run(`git config --global user.name "GitHub Action"`);
-  run(`git config --global user.email "action@github.com"`);
+  run(`git config --global user.name "${name}"`);
+  run(`git config --global user.email "${email}"`);
 }

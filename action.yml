@@ -7,6 +7,14 @@ inputs:
     description: The GitHub token used to authenticated with GitHub.
     required: false
     default: ${{ github.token }}
+  git_user_name:
+    description: Git user name to use for auto-fix commits
+    required: false
+    default: 'GitHub Action'
+  git_user_email:
+    description: Git user email to use for auto-fix commits
+    required: false
+    default: 'action@github.com'
   continue_on_error:
     description: Whether the workflow run should also fail when linter failures are detected
     required: false
