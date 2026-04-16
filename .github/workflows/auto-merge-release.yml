@@ -7,7 +7,7 @@ on:
 
 jobs:
   merge:
-    if: ${{ github.event.label.name == 'release-version' && github.event.pull_request.user.login == 'profidev-commit-bot' }}
+    if: ${{ github.event.label.name == 'release-version' && github.event.pull_request.user.login == 'profidev-commit-bot[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
