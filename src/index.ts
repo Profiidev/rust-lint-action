@@ -79,7 +79,7 @@ async function runAction(): Promise<void> {
   ][]) {
     // Determine whether the linter should be executed on the commit
     if (core.getInput(linterId) === 'true') {
-      core.startGroup(`Run ${linter.linterName}`);
+       core.startGroup(`Run ${linter.linterName}`);
 
       const fileExtensions = core.getInput(`${linterId}_extensions`, {
         required: true
