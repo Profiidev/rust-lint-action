@@ -23,6 +23,5 @@ jobs:
           auto_fix: true
           oxfmt: true
           tsc: true
-          prettier: true
           git_sign_commits: true
           github_token: ${{ steps.app-token.outputs.token }}
