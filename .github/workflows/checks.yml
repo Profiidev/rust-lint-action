@@ -11,8 +11,11 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/create-github-app-token@v3
+        id: app-token
         with:
-          token: ${{ secrets.PERSONAL_TOKEN }}
+          client-id: ${{ secrets.COMMIT_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.COMMIT_BOT_PRIVATE_KEY }}
       - uses: bahmutov/npm-install@v1
       - name: Test Action
         uses: ./
@@ -20,3 +23,5 @@ jobs:
           auto_fix: true
           oxfmt: true
           tsc: true
+          git_sign_commits: true
+          github_token: ${{ steps.app-token.outputs.token }}

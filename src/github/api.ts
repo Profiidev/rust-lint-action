@@ -3,8 +3,13 @@ import * as core from '@actions/core';
 import { name as actionName } from '../../package.json';
 import { GithubContext } from './context';
 import { LintResult } from '../utils/lint-result';
-import request, { RequestOptions } from '../utils/request';
+import request from '../utils/request';
 import { capitalizeFirstLetter } from '../utils/string';
+import { Octokit } from '@octokit/core';
+import { run } from '../utils/action';
+import { readFileSync } from 'fs';
+import path from 'path';
+import { getFileMode, GitMode } from '../utils/file';
 
 /**
  * Creates a new check on GitHub which annotates the relevant commit with linting errors
@@ -109,4 +114,159 @@ export async function createCheck(
       `Error trying to create GitHub check for ${linterName}: ${errorMessage}`
     );
   }
+}
+
+export async function apiCommit(
+  octokit: Octokit,
+  context: GithubContext,
+  message: string
+) {
+  const owner = context.repository.repoName.split('/')[0];
+  const repo = context.repository.repoName.split('/')[1];
+
+  let functionalRef: string = context.ref;
+  if (
+    context.eventName === 'pull_request' ||
+    context.eventName === 'pull_request_target'
+  ) {
+    if (context.event.pull_request?.head?.ref) {
+      functionalRef = `refs/heads/${context.event.pull_request.head.ref}`;
+    }
+  }
+
+  const ref = normalizeRef(functionalRef);
+  const refData = (
+    await octokit.request('GET /repos/{owner}/{repo}/git/ref/{ref}', {
+      owner,
+      repo,
+      ref
+    })
+  ).data;
+  let headCommit: string;
+  if (refData.object.type === 'commit') {
+    headCommit = refData.object.sha;
+  } else {
+    throw new Error(`Unsupported ref type: ${refData.object.type}`);
+  }
+
+  const headTree = (
+    await octokit.request(
+      'GET /repos/{owner}/{repo}/git/commits/{commit_sha}',
+      {
+        owner,
+        repo,
+        commit_sha: headCommit
+      }
+    )
+  ).data.tree.sha;
+
+  run('git add -A');
+  let changes = run('git diff --cached --name-only --no-renames');
+  if (changes.status !== 0) {
+    throw new Error(`Error trying to get staged changes: ${changes.stderr}`);
+  }
+
+  const changedFiles = changes.stdout.split(/\r?\n/).filter((f) => f);
+  if (changedFiles.length === 0) {
+    core.info('No changes to commit');
+    return;
+  }
+
+  let blobs: {
+    sha: string | null;
+    path: string;
+    type: 'blob';
+    mode: GitMode;
+  }[] = [];
+
+  core.startGroup(`Creating blobs for ${changedFiles.length} changed files…`);
+  for (const file of changedFiles) {
+    const location = path.join(context.workspace, file);
+    const content = Buffer.from(readFileSync(location)).toString('base64');
+
+    let mode: GitMode;
+    try {
+      mode = getFileMode(location, true);
+    } catch {
+      core.info(
+        `Couldn't determine file mode for ${file}, using default "100644"`
+      );
+      blobs.push({
+        path: file,
+        type: 'blob',
+        sha: null,
+        mode: '100644'
+      });
+      continue;
+    }
+
+    const sha = (
+      await octokit.request('POST /repos/{owner}/{repo}/git/blobs', {
+        owner,
+        repo,
+        encoding: 'base64',
+        content
+      })
+    ).data.sha;
+
+    const blob = {
+      path: file,
+      type: 'blob' as const,
+      mode,
+      sha
+    };
+
+    core.info(`${blob.sha}\t${blob.path}`);
+    blobs.push(blob);
+  }
+  core.endGroup();
+  core.setOutput(
+    'blobs',
+    blobs.map((b) => b.sha)
+  );
+
+  if (blobs.length === 0) {
+    core.info('No blobs to commit');
+    return;
+  }
+
+  const tree = (
+    await octokit.request('POST /repos/{owner}/{repo}/git/trees', {
+      owner,
+      repo,
+      base_tree: headTree,
+      tree: blobs
+    })
+  ).data.sha;
+  core.info(`Created tree ${tree} with ${blobs.length} blobs`);
+
+  const commit = (
+    await octokit.request('POST /repos/{owner}/{repo}/git/commits', {
+      owner,
+      repo,
+      message,
+      tree,
+      parents: [headCommit]
+    })
+  ).data.sha;
+  core.info(`Created commit ${commit} with message "${message}"`);
+
+  const refSha = (
+    await octokit.request('PATCH /repos/{owner}/{repo}/git/refs/{ref}', {
+      owner,
+      repo,
+      sha: commit,
+      ref
+    })
+  ).data.object.sha;
+  core.info(`Updated ref ${ref} to point to commit ${refSha}`);
+
+  run(`git pull origin refs/${ref}`);
+}
+
+export function normalizeRef(ref: string): string {
+  // Ensure ref matches format `heads/<ref>` or `tags/<ref>`
+  if (ref.startsWith('heads/') || ref.startsWith('tags/')) return ref;
+  else if (ref.startsWith('refs/')) return ref.replace('refs/', '');
+  else return `heads/${ref}`;
 }

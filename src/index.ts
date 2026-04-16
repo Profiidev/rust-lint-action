@@ -2,10 +2,11 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import * as core from '@actions/core';
 import * as git from './git';
-import { createCheck } from './github/api';
+import { apiCommit, createCheck } from './github/api';
 import { getContext } from './github/context';
 import linters, { Linter } from './linters';
 import { getSummary, LintResult } from './utils/lint-result';
+import { Octokit } from '@octokit/core';
 
 interface Check {
   lintCheckName: string;
@@ -29,6 +30,13 @@ async function runAction(): Promise<void> {
   const isPullRequest =
     context.eventName === 'pull_request' ||
     context.eventName === 'pull_request_target';
+  const gitName = core.getInput('git_user_name');
+  const gitEmail = core.getInput('git_user_email');
+  const signCommits = core.getInput('git_sign_commits') === 'true';
+
+  const octokit = new Octokit({
+    auth: context.token
+  });
 
   // If on a PR from fork: Display messages regarding action limitations
   if (context.eventName === 'pull_request' && context.repository.hasFork) {
@@ -44,7 +52,7 @@ async function runAction(): Promise<void> {
 
   if (autoFix) {
     // Set Git committer username and password
-    git.setUserInfo();
+    git.setUserInfo(gitName, gitEmail);
   }
   if (isPullRequest) {
     // Fetch and check out PR branch:
@@ -63,6 +71,8 @@ async function runAction(): Promise<void> {
 
   let hasFailures = false;
   const checks: Check[] = [];
+  const linterWithFixes: string[] = [];
+  let previousChanges = '';
 
   // Loop over all available linters
   for (const [linterId, linter] of Object.entries(linters) as [
@@ -124,14 +134,11 @@ async function runAction(): Promise<void> {
         hasFailures = true;
       }
 
-      if (linterAutoFix && commit) {
-        // Commit and push auto-fix changes
-        if (git.hasChanges()) {
-          git.commitChanges(
-            commitMessage.replace(/\${linter}/g, linter.linterName),
-            skipVerification
-          );
-          git.pushChanges(skipVerification);
+      if (linterAutoFix && commit && git.hasChanges()) {
+        let changes = git.getChanges();
+        if (changes !== previousChanges) {
+          previousChanges = changes;
+          linterWithFixes.push(linter.linterName);
         }
       }
 
@@ -175,6 +182,20 @@ async function runAction(): Promise<void> {
   }
   if (!groupClosed) {
     core.endGroup();
+  }
+
+  if (git.hasChanges()) {
+    // Commit and push auto-fix changes
+    const message = commitMessage.replace(
+      /\${linter}/g,
+      linterWithFixes.join(', ')
+    );
+    if (signCommits) {
+      await apiCommit(octokit, context, message);
+    } else {
+      git.commitChanges(message, skipVerification);
+      git.pushChanges(skipVerification);
+    }
   }
 
   if (hasFailures && !continueOnError) {

@@ -85,6 +85,13 @@ export function hasChanges(): boolean {
   return hasChangedFiles;
 }
 
+export function getChanges(): string {
+  const output = run('git diff --exit-code HEAD --', {
+    ignoreErrors: true
+  });
+  return output.stdout.trim();
+}
+
 /**
  * Pushes all changes to the remote repository
  * @param {boolean} skipVerification - Skip Git verification
@@ -97,8 +104,8 @@ export function pushChanges(skipVerification: boolean): void {
 /**
  * Updates the global Git configuration with the provided information
  */
-export function setUserInfo(): void {
+export function setUserInfo(name: string, email: string): void {
   core.info(`Setting Git user information`);
-  run(`git config --global user.name "GitHub Action"`);
-  run(`git config --global user.email "action@github.com"`);
+  run(`git config --global user.name "${name}"`);
+  run(`git config --global user.email "${email}"`);
 }

@@ -19,6 +19,8 @@ export interface ActionEnv {
   token: string;
   /** Workspace path. */
   workspace: string;
+  /** Ref. */
+  ref: string;
 }
 
 /**
@@ -55,6 +57,8 @@ export interface GithubContext {
   token: string;
   /** Workspace path. */
   workspace: string;
+  /** Ref. */
+  ref: string;
 }
 
 /**
@@ -68,6 +72,7 @@ export function parseActionEnv(): ActionEnv {
     eventName: getEnv('github_event_name', true)!,
     eventPath: getEnv('github_event_path', true)!,
     workspace: getEnv('github_workspace', true)!,
+    ref: getEnv('github_ref', true)!,
 
     // Information provided by action user
     token: core.getInput('github_token', { required: true })
@@ -140,7 +145,8 @@ export function parseRepository(
  * event
  */
 export function getContext(): GithubContext {
-  const { actor, eventName, eventPath, token, workspace } = parseActionEnv();
+  const { actor, eventName, eventPath, token, workspace, ref } =
+    parseActionEnv();
   const event = parseEnvFile(eventPath);
   return {
     actor,
@@ -149,6 +155,7 @@ export function getContext(): GithubContext {
     eventName,
     repository: parseRepository(eventName, event),
     token,
-    workspace
+    workspace,
+    ref
   };
 }
