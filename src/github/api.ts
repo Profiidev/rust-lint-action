@@ -249,7 +249,7 @@ export async function apiCommit(
       parents: [headCommit]
     })
   ).data.sha;
-   core.info(`Created commit ${commit} with message "${message}"`);
+  core.info(`Created commit ${commit} with message "${message}"`);
 
   const refSha = (
     await octokit.request('PATCH /repos/{owner}/{repo}/git/refs/{ref}', {

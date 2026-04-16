@@ -173,7 +173,7 @@ async function runAction(): Promise<void> {
       )
     );
   } catch (err) {
-     core.endGroup();
+    core.endGroup();
     groupClosed = true;
     core.warning('Some check runs could not be created.');
   }

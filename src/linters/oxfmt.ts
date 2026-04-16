@@ -16,7 +16,7 @@ export default class OxFmt {
     // Verify that NPM is installed (required to execute OxFmt)
     if (!(await commandExists('npm'))) {
       throw new Error('npm is not installed');
-     }
+    }
 
     // Verify that oxfmt is installed
     const commandPrefix = prefix || 'npx --no-install';

@@ -14,7 +14,7 @@ export default class TSC {
 
   /**
    * Verifies that all required programs are installed. Throws an error if programs are missing
-    * @param dir - Directory to run the linting program in
+   * @param dir - Directory to run the linting program in
    * @param prefix - Prefix to the lint command
    */
   static async verifySetup(dir: string, prefix = ''): Promise<void> {
