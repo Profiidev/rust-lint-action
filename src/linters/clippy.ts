@@ -18,7 +18,7 @@ export default class Clippy {
   static async verifySetup(dir: string, prefix = ''): Promise<void> {
     // Verify that cargo is installed (required to execute clippy)
     if (!(await commandExists('cargo'))) {
-      throw new Error('cargo is not installed');
+       throw new Error('cargo is not installed');
     }
 
     // Verify that clippy is installed
