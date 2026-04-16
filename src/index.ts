@@ -141,7 +141,7 @@ async function runAction(): Promise<void> {
           linterWithFixes.push(linter.linterName);
         }
       }
-
+ 
       const lintCheckName = checkName
         .replace(/\${linter}/g, linter.linterName)
         .replace(/\${dir}/g, lintDirRel !== '.' ? `${lintDirRel}` : '')
