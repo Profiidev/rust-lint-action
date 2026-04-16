@@ -206,6 +206,6 @@ async function runAction(): Promise<void> {
 }
 
 runAction().catch((error: Error) => {
-  core.debug(error.stack || 'No error stack trace');
+   core.debug(error.stack || 'No error stack trace');
   core.setFailed(error.message);
 });
