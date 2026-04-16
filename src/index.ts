@@ -132,7 +132,7 @@ async function runAction(): Promise<void> {
         hasFailures = true;
       }
 
-       if (linterAutoFix && commit) {
+      if (linterAutoFix && commit) {
         // Commit and push auto-fix changes
         const message = commitMessage.replace(/\${linter}/g, linter.linterName);
         if (git.hasChanges()) {

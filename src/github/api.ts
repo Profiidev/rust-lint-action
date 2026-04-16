@@ -124,7 +124,17 @@ export async function apiCommit(
   const owner = context.repository.repoName.split('/')[0];
   const repo = context.repository.repoName.split('/')[1];
 
-  const ref = normalizeRef(context.ref);
+  let functionalRef: string = context.ref;
+  if (
+    context.eventName === 'pull_request' ||
+    context.eventName === 'pull_request_target'
+  ) {
+    if (context.event.pull_request?.head?.ref) {
+      functionalRef = `refs/heads/${context.event.pull_request.head.ref}`;
+    }
+  }
+
+  const ref = normalizeRef(functionalRef);
   const refData = (
     await octokit.request('GET /repos/{owner}/{repo}/git/ref/{ref}', {
       owner,
