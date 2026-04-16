@@ -71,6 +71,7 @@ async function runAction(): Promise<void> {
 
   let hasFailures = false;
   const checks: Check[] = [];
+  const linterWithFixes: string[] = [];
 
   // Loop over all available linters
   for (const [linterId, linter] of Object.entries(linters) as [
@@ -133,15 +134,8 @@ async function runAction(): Promise<void> {
       }
 
       if (linterAutoFix && commit) {
-        // Commit and push auto-fix changes
-        const message = commitMessage.replace(/\${linter}/g, linter.linterName);
         if (git.hasChanges()) {
-          if (signCommits) {
-            apiCommit(octokit, context, message);
-          } else {
-            git.commitChanges(message, skipVerification);
-            git.pushChanges(skipVerification);
-          }
+          linterWithFixes.push(linter.linterName);
         }
       }
 
@@ -185,6 +179,20 @@ async function runAction(): Promise<void> {
   }
   if (!groupClosed) {
     core.endGroup();
+  }
+
+  if (git.hasChanges()) {
+    // Commit and push auto-fix changes
+    const message = commitMessage.replace(
+      /\${linter}/g,
+      linterWithFixes.join(', ')
+    );
+    if (signCommits) {
+      await apiCommit(octokit, context, message);
+    } else {
+      git.commitChanges(message, skipVerification);
+      git.pushChanges(skipVerification);
+    }
   }
 
   if (hasFailures && !continueOnError) {
