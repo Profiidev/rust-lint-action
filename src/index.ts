@@ -72,6 +72,7 @@ async function runAction(): Promise<void> {
   let hasFailures = false;
   const checks: Check[] = [];
   const linterWithFixes: string[] = [];
+  let previousChanges = '';
 
   // Loop over all available linters
   for (const [linterId, linter] of Object.entries(linters) as [
@@ -133,8 +134,10 @@ async function runAction(): Promise<void> {
         hasFailures = true;
       }
 
-      if (linterAutoFix && commit) {
-        if (git.hasChanges()) {
+      if (linterAutoFix && commit && git.hasChanges()) {
+        let changes = git.getChanges();
+        if (changes !== previousChanges) {
+          previousChanges = changes;
           linterWithFixes.push(linter.linterName);
         }
       }

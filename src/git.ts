@@ -85,6 +85,13 @@ export function hasChanges(): boolean {
   return hasChangedFiles;
 }
 
+export function getChanges(): string {
+  const output = run('git diff --exit-code HEAD --', {
+    ignoreErrors: true
+  });
+  return output.stdout.trim();
+}
+
 /**
  * Pushes all changes to the remote repository
  * @param {boolean} skipVerification - Skip Git verification
