@@ -1,15 +1,15 @@
 import * as core from '@actions/core';
 
 import { name as actionName } from '../../package.json';
-import { GithubContext } from './context';
-import { LintResult } from '../utils/lint-result';
+import type { GithubContext } from './context';
+import type { LintResult } from '../utils/lint-result';
 import request from '../utils/request';
 import { capitalizeFirstLetter } from '../utils/string';
-import { Octokit } from '@octokit/core';
+import type { Octokit } from '@octokit/core';
 import { run } from '../utils/action';
-import { readFileSync } from 'fs';
-import path from 'path';
-import { getFileMode, GitMode } from '../utils/file';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { type GitMode, getFileMode } from '../utils/file';
 
 /**
  * Creates a new check on GitHub which annotates the relevant commit with linting errors
@@ -22,26 +22,25 @@ import { getFileMode, GitMode } from '../utils/file';
  * there are only warnings
  * @param {string} summary - Summary for the GitHub check
  */
-export async function createCheck(
+export const createCheck = async (
   linterName: string,
   sha: string,
   context: GithubContext,
   lintResult: LintResult,
   neutralCheckOnWarning: boolean,
   summary: string
-): Promise<void> {
+): Promise<void> => {
   let annotations: any[] = [];
   for (const level of ['error', 'warning'] as const) {
-    annotations = [
-      ...annotations,
+    annotations.push(
       ...lintResult[level].map((result) => ({
-        path: result.path,
-        start_line: result.firstLine,
-        end_line: result.lastLine,
         annotation_level: level === 'warning' ? 'warning' : 'failure',
-        message: result.message
+        end_line: result.lastLine,
+        message: result.message,
+        path: result.path,
+        start_line: result.firstLine
       }))
-    ];
+    );
   }
 
   // Only use the first 50 annotations (limit for a single API request)
@@ -52,7 +51,7 @@ export async function createCheck(
     annotations = annotations.slice(0, 50);
   }
 
-  let conclusion: 'neutral' | 'success' | 'failure';
+  let conclusion: 'neutral' | 'success' | 'failure' = 'success';
   if (lintResult.isSuccess) {
     if (annotations.length > 0 && neutralCheckOnWarning) {
       conclusion = 'neutral';
@@ -64,13 +63,13 @@ export async function createCheck(
   }
 
   const body = {
-    name: linterName,
-    head_sha: sha,
     conclusion,
+    head_sha: sha,
+    name: linterName,
     output: {
-      title: capitalizeFirstLetter(summary),
+      annotations,
       summary: `${linterName} found ${summary}`,
-      annotations
+      title: capitalizeFirstLetter(summary)
     }
   };
   try {
@@ -81,48 +80,48 @@ export async function createCheck(
     await request(
       `${process.env.GITHUB_API_URL}/repos/${context.repository.repoName}/check-runs`,
       {
-        method: 'POST',
+        body,
         headers: {
-          'Content-Type': 'application/json',
           // "Accept" header is required to access Checks API during preview period
           Accept: 'application/vnd.github.antiope-preview+json',
           Authorization: `Bearer ${context.token}`,
+          'Content-Type': 'application/json',
           'User-Agent': actionName
         },
-        body
+        method: 'POST'
       }
     );
     core.info(`${linterName} check created successfully`);
-  } catch (err: any) {
-    let errorMessage = err.message;
-    if (err.data) {
+  } catch (error: any) {
+    let errorMessage = error.message;
+    if (error.data) {
       try {
-        const errorData = JSON.parse(err.data);
+        const errorData = JSON.parse(error.data);
         if (errorData.message) {
           errorMessage += `. ${errorData.message}`;
         }
         if (errorData.documentation_url) {
           errorMessage += ` ${errorData.documentation_url}`;
         }
-      } catch (e) {
+      } catch {
         // Ignore
       }
     }
     core.error(errorMessage);
 
     throw new Error(
-      `Error trying to create GitHub check for ${linterName}: ${errorMessage}`
+      `Error trying to create GitHub check for ${linterName}: ${errorMessage}`,
+      { cause: error }
     );
   }
-}
+};
 
-export async function apiCommit(
+export const apiCommit = async (
   octokit: Octokit,
   context: GithubContext,
   message: string
-) {
-  const owner = context.repository.repoName.split('/')[0];
-  const repo = context.repository.repoName.split('/')[1];
+) => {
+  const [owner, repo] = context.repository.repoName.split('/');
 
   let functionalRef: string = context.ref;
   if (
@@ -138,11 +137,11 @@ export async function apiCommit(
   const refData = (
     await octokit.request('GET /repos/{owner}/{repo}/git/ref/{ref}', {
       owner,
-      repo,
-      ref
+      ref,
+      repo
     })
   ).data;
-  let headCommit: string;
+  let headCommit = '';
   if (refData.object.type === 'commit') {
     headCommit = refData.object.sha;
   } else {
@@ -153,15 +152,15 @@ export async function apiCommit(
     await octokit.request(
       'GET /repos/{owner}/{repo}/git/commits/{commit_sha}',
       {
+        commit_sha: headCommit,
         owner,
-        repo,
-        commit_sha: headCommit
+        repo
       }
     )
   ).data.tree.sha;
 
   run('git add -A');
-  let changes = run('git diff --cached --name-only --no-renames');
+  const changes = run('git diff --cached --name-only --no-renames');
   if (changes.status !== 0) {
     throw new Error(`Error trying to get staged changes: ${changes.stderr}`);
   }
@@ -172,8 +171,8 @@ export async function apiCommit(
     return;
   }
 
-  let blobs: {
-    sha: string | null;
+  const blobs: {
+    sha?: string;
     path: string;
     type: 'blob';
     mode: GitMode;
@@ -184,7 +183,7 @@ export async function apiCommit(
     const location = path.join(context.workspace, file);
     const content = Buffer.from(readFileSync(location)).toString('base64');
 
-    let mode: GitMode;
+    let mode: GitMode = '100644';
     try {
       mode = getFileMode(location, true);
     } catch {
@@ -192,28 +191,29 @@ export async function apiCommit(
         `Couldn't determine file mode for ${file}, using default "100644"`
       );
       blobs.push({
+        mode: '100644',
         path: file,
-        type: 'blob',
-        sha: null,
-        mode: '100644'
+        sha: undefined,
+        type: 'blob'
       });
       continue;
     }
 
-    const sha = (
+    // oxlint-disable no-await-in-loop
+    const { sha } = (
       await octokit.request('POST /repos/{owner}/{repo}/git/blobs', {
-        owner,
-        repo,
+        content,
         encoding: 'base64',
-        content
+        owner,
+        repo
       })
-    ).data.sha;
+    ).data;
 
     const blob = {
-      path: file,
-      type: 'blob' as const,
       mode,
-      sha
+      path: file,
+      sha,
+      type: 'blob' as const
     };
 
     core.info(`${blob.sha}\t${blob.path}`);
@@ -232,9 +232,9 @@ export async function apiCommit(
 
   const tree = (
     await octokit.request('POST /repos/{owner}/{repo}/git/trees', {
+      base_tree: headTree,
       owner,
       repo,
-      base_tree: headTree,
       tree: blobs
     })
   ).data.sha;
@@ -242,11 +242,11 @@ export async function apiCommit(
 
   const commit = (
     await octokit.request('POST /repos/{owner}/{repo}/git/commits', {
-      owner,
-      repo,
       message,
-      tree,
-      parents: [headCommit]
+      owner,
+      parents: [headCommit],
+      repo,
+      tree
     })
   ).data.sha;
   core.info(`Created commit ${commit} with message "${message}"`);
@@ -254,19 +254,23 @@ export async function apiCommit(
   const refSha = (
     await octokit.request('PATCH /repos/{owner}/{repo}/git/refs/{ref}', {
       owner,
+      ref,
       repo,
-      sha: commit,
-      ref
+      sha: commit
     })
   ).data.object.sha;
   core.info(`Updated ref ${ref} to point to commit ${refSha}`);
 
   run(`git pull origin refs/${ref}`);
-}
+};
 
-export function normalizeRef(ref: string): string {
+export const normalizeRef = (ref: string): string => {
   // Ensure ref matches format `heads/<ref>` or `tags/<ref>`
-  if (ref.startsWith('heads/') || ref.startsWith('tags/')) return ref;
-  else if (ref.startsWith('refs/')) return ref.replace('refs/', '');
-  else return `heads/${ref}`;
-}
+  if (ref.startsWith('heads/') || ref.startsWith('tags/')) {
+    return ref;
+  } else if (ref.startsWith('refs/')) {
+    return ref.replace('refs/', '');
+  } else {
+    return `heads/${ref}`;
+  }
+};

@@ -7,11 +7,11 @@ import checkForCommand from 'command-exists';
  */
 export default async function commandExists(command: string): Promise<boolean> {
   // The `command-exists` library throws an error if the command is not available. This function
-  // catches these errors and returns a boolean value instead
+  // Catches these errors and returns a boolean value instead
   try {
     await checkForCommand(command);
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }

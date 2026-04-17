@@ -1,11 +1,9 @@
 import { run } from '../utils/action';
 import commandExists from '../utils/command-exists';
-import { initLintResult, LintResult } from '../utils/lint-result';
+import { type LintResult, initLintResult } from '../utils/lint-result';
 
 export default class OxFmt {
-  static get linterName(): string {
-    return 'oxfmt';
-  }
+  static linterName = 'oxfmt';
 
   /**
    * Verifies that all required programs are installed. Throws an error if programs are missing
@@ -22,8 +20,8 @@ export default class OxFmt {
     const commandPrefix = prefix || 'npx --no-install';
     try {
       run(`${commandPrefix} oxfmt --version`, { dir });
-    } catch (err) {
-      throw new Error(`${this.linterName} is not installed`);
+    } catch (error: any) {
+      throw new Error(`${this.linterName} is not installed`, { cause: error });
     }
   }
 
@@ -80,17 +78,14 @@ export default class OxFmt {
           !line.startsWith('Format') &&
           !line.startsWith('Finished')
       )
-      .map((line) => {
-        // Extract just the path: "src/file.ts (0ms)" -> "src/file.ts"
-        return line.split(' ')[0];
-      });
+      .map((line) => line.split(' ')[0]);
 
     lintResult.error = errorPaths.map((path) => ({
-      path,
       firstLine: 1,
       lastLine: 1,
       message:
-        "There are issues with this file's formatting, please run Prettier to fix the errors"
+        "There are issues with this file's formatting, please run Prettier to fix the errors",
+      path
     }));
 
     return lintResult;

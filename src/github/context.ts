@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { readFileSync } from 'node:fs';
 
 import * as core from '@actions/core';
 
@@ -65,19 +65,18 @@ export interface GithubContext {
  * Returns the GitHub Actions workflow's environment variables
  * @returns {ActionEnv} GitHub Actions workflow's environment variables
  */
-export function parseActionEnv(): ActionEnv {
-  return {
-    // Information provided by environment
-    actor: getEnv('github_actor', true)!,
-    eventName: getEnv('github_event_name', true)!,
-    eventPath: getEnv('github_event_path', true)!,
-    workspace: getEnv('github_workspace', true)!,
-    ref: getEnv('github_ref', true)!,
+export const parseActionEnv = (): ActionEnv => ({
+  // Information provided by environment
+  actor: getEnv('github_actor', true)!,
+  eventName: getEnv('github_event_name', true)!,
+  eventPath: getEnv('github_event_path', true)!,
+  ref: getEnv('github_ref', true)!,
 
-    // Information provided by action user
-    token: core.getInput('github_token', { required: true })
-  };
-}
+  // Information provided by action user
+  token: core.getInput('github_token', { required: true }),
+
+  workspace: getEnv('github_workspace', true)!
+});
 
 /**
  * Parse `event.json` file (file with the complete webhook event payload, automatically provided by
@@ -85,10 +84,10 @@ export function parseActionEnv(): ActionEnv {
  * @param {string} eventPath - Path to the `event.json` file
  * @returns {any} - Webhook event payload
  */
-export function parseEnvFile(eventPath: string): any {
+export const parseEnvFile = (eventPath: string): any => {
   const eventBuffer = readFileSync(eventPath, 'utf8');
   return JSON.parse(eventBuffer);
-}
+};
 
 /**
  * Parses the name of the current branch from the GitHub webhook event
@@ -96,15 +95,17 @@ export function parseEnvFile(eventPath: string): any {
  * @param {any} event - GitHub webhook event payload
  * @returns {string} - Branch name
  */
-export function parseBranch(eventName: string, event: any): string {
+export const parseBranch = (eventName: string, event: any): string => {
   if (eventName === 'push' || eventName === 'workflow_dispatch') {
     return event.ref.substring(11); // Remove "refs/heads/" from start of string
   }
   if (eventName === 'pull_request' || eventName === 'pull_request_target') {
     return event.pull_request.head.ref;
   }
-  throw Error(`${actionName} does not support "${eventName}" GitHub events`);
-}
+  throw new Error(
+    `${actionName} does not support "${eventName}" GitHub events`
+  );
+};
 
 /**
  * Parses the name of the current repository and determines whether it has a corresponding fork.
@@ -113,38 +114,38 @@ export function parseBranch(eventName: string, event: any): string {
  * @param {any} event - GitHub webhook event payload
  * @returns {GithubRepository} - Information about the GitHub repository and its fork (if it exists)
  */
-export function parseRepository(
+export const parseRepository = (
   eventName: string,
   event: any
-): GithubRepository {
+): GithubRepository => {
   const repoName = event.repository.full_name;
   const cloneUrl = event.repository.clone_url;
-  let forkName: string | undefined;
-  let forkCloneUrl: string | undefined;
+  let forkName: string | undefined = undefined;
+  let forkCloneUrl: string | undefined = undefined;
   if (eventName === 'pull_request' || eventName === 'pull_request_target') {
     // "pull_request" events are triggered on the repository where the PR is made. The PR branch can
-    // be on the same repository (`forkRepository` is set to `null`) or on a fork (`forkRepository`
-    // is defined)
+    // Be on the same repository (`forkRepository` is set to `null`) or on a fork (`forkRepository`
+    // Is defined)
     const headRepoName = event.pull_request.head.repo.full_name;
     forkName = repoName === headRepoName ? undefined : headRepoName;
     const headForkCloneUrl = event.pull_request.head.repo.clone_url;
     forkCloneUrl = cloneUrl === headForkCloneUrl ? undefined : headForkCloneUrl;
   }
   return {
-    repoName,
     cloneUrl,
-    forkName,
     forkCloneUrl,
-    hasFork: forkName != null && forkName !== repoName
+    forkName,
+    hasFork: forkName !== undefined && forkName !== repoName,
+    repoName
   };
-}
+};
 
 /**
  * Returns information about the GitHub repository and action trigger event
  * @returns {GithubContext} context - Information about the GitHub repository and action trigger
  * event
  */
-export function getContext(): GithubContext {
+export const getContext = (): GithubContext => {
   const { actor, eventName, eventPath, token, workspace, ref } =
     parseActionEnv();
   const event = parseEnvFile(eventPath);
@@ -153,9 +154,9 @@ export function getContext(): GithubContext {
     branch: parseBranch(eventName, event),
     event,
     eventName,
+    ref,
     repository: parseRepository(eventName, event),
     token,
-    workspace,
-    ref
+    workspace
   };
-}
+};

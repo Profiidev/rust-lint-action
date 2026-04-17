@@ -1,4 +1,4 @@
-import { LintResult } from '../utils/lint-result';
+import type { LintResult } from '../utils/lint-result';
 import Clippy from './clippy';
 import OxFmt from './oxfmt';
 import Prettier from './prettier';
@@ -31,11 +31,11 @@ export interface Linter {
 
 const linters: Record<string, Linter> = {
   clippy: Clippy,
-  rustfmt: RustFmt,
-  tsc: TSC,
+  oxfmt: OxFmt,
   prettier: Prettier,
+  rustfmt: RustFmt,
   svelte: Svelte,
-  oxfmt: OxFmt
+  tsc: TSC
 };
 
 export default linters;

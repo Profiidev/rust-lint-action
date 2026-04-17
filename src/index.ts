@@ -1,11 +1,11 @@
-import { existsSync } from 'fs';
-import { join } from 'path';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import * as core from '@actions/core';
 import * as git from './git';
 import { apiCommit, createCheck } from './github/api';
 import { getContext } from './github/context';
-import linters, { Linter } from './linters';
-import { getSummary, LintResult } from './utils/lint-result';
+import linters from './linters';
+import { type LintResult, getSummary } from './utils/lint-result';
 import { Octokit } from '@octokit/core';
 
 interface Check {
@@ -17,7 +17,8 @@ interface Check {
 /**
  * Parses the action configuration and runs all enabled linters on matching files
  */
-async function runAction(): Promise<void> {
+// oxlint-disable-next-line complexity
+const runAction = async (): Promise<void> => {
   const context = getContext();
   const autoFix = core.getInput('auto_fix') === 'true';
   const commit = core.getInput('commit') === 'true';
@@ -60,10 +61,10 @@ async function runAction(): Promise<void> {
     // - "pull_request" event on origin, for code on origin: The Checkout Action
     //   (https://github.com/actions/checkout) checks out the PR's test merge commit instead of the
     //   PR branch. Git is therefore in detached head state. To be able to push changes, the branch
-    //   needs to be fetched and checked out first
+    //   Needs to be fetched and checked out first
     // - "pull_request" event on origin, for code on fork: Same as above, but the repo/branch where
-    //   changes need to be pushed is not yet available. The fork needs to be added as a Git remote
-    //   first
+    //   Changes need to be pushed is not yet available. The fork needs to be added as a Git remote
+    //   First
     git.checkOutRemoteBranch(context);
   }
 
@@ -75,10 +76,7 @@ async function runAction(): Promise<void> {
   let previousChanges = '';
 
   // Loop over all available linters
-  for (const [linterId, linter] of Object.entries(linters) as [
-    string,
-    Linter
-  ][]) {
+  for (const [linterId, linter] of Object.entries(linters)) {
     // Determine whether the linter should be executed on the commit
     if (core.getInput(linterId) === 'true') {
       core.startGroup(`Run ${linter.linterName}`);
@@ -101,13 +99,14 @@ async function runAction(): Promise<void> {
 
       // Check that the linter and its dependencies are installed
       core.info(`Verifying setup for ${linter.linterName}…`);
+      // oxlint-disable-next-line no-await-in-loop
       await linter.verifySetup(lintDirAbs, prefix);
       core.info(`Verified ${linter.linterName} setup`);
 
       // Determine which files should be linted
       const fileExtList = fileExtensions.split(',');
       core.info(
-        `Will use ${linter.linterName} to check the files with extensions ${fileExtList}`
+        `Will use ${linter.linterName} to check the files with extensions ${fileExtList.join(',')}`
       );
 
       // Lint and optionally auto-fix the matching files, parse code style violations
@@ -135,7 +134,7 @@ async function runAction(): Promise<void> {
       }
 
       if (linterAutoFix && commit && git.hasChanges()) {
-        let changes = git.getChanges();
+        const changes = git.getChanges();
         if (changes !== previousChanges) {
           previousChanges = changes;
           linterWithFixes.push(linter.linterName);
@@ -144,7 +143,7 @@ async function runAction(): Promise<void> {
 
       const lintCheckName = checkName
         .replace(/\${linter}/g, linter.linterName)
-        .replace(/\${dir}/g, lintDirRel !== '.' ? `${lintDirRel}` : '')
+        .replace(/\${dir}/g, lintDirRel !== '.' ? lintDirRel : '')
         .trim();
 
       checks.push({ lintCheckName, lintResult, summary });
@@ -154,8 +153,8 @@ async function runAction(): Promise<void> {
   }
 
   // Add commit annotations after running all linters. To be displayed on pull requests, the
-  // annotations must be added to the last commit on the branch. This can either be a user commit or
-  // one of the auto-fix commits
+  // Annotations must be added to the last commit on the branch. This can either be a user commit or
+  // One of the auto-fix commits
   if (isPullRequest && autoFix) {
     headSha = git.getHeadSha();
   }
@@ -164,7 +163,7 @@ async function runAction(): Promise<void> {
   let groupClosed = false;
   try {
     await Promise.all(
-      checks.map(({ lintCheckName, lintResult, summary }) =>
+      checks.map(async ({ lintCheckName, lintResult, summary }) =>
         createCheck(
           lintCheckName,
           headSha,
@@ -175,7 +174,7 @@ async function runAction(): Promise<void> {
         )
       )
     );
-  } catch (err) {
+  } catch {
     core.endGroup();
     groupClosed = true;
     core.warning('Some check runs could not be created.');
@@ -203,9 +202,10 @@ async function runAction(): Promise<void> {
       'Linting failures detected. See check runs with annotations for details.'
     );
   }
-}
+};
 
-runAction().catch((error: Error) => {
+// oxlint-disable-next-line use-unknown-in-catch-callback-variable
+runAction().catch((error: any) => {
   core.debug(error.stack || 'No error stack trace');
   core.setFailed(error.message);
 });

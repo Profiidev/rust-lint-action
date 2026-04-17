@@ -1,6 +1,6 @@
 import { run } from '../utils/action';
 import commandExists from '../utils/command-exists';
-import { initLintResult, LintResult } from '../utils/lint-result';
+import { type LintResult, initLintResult } from '../utils/lint-result';
 
 const PARSE_REGEX = /([\s\S]*?):(\d*):$([\s\S]*)/m;
 
@@ -8,16 +8,14 @@ const PARSE_REGEX = /([\s\S]*?):(\d*):$([\s\S]*)/m;
  * https://github.com/rust-lang/rustfmt
  */
 export default class RustFmt {
-  static get linterName(): string {
-    return 'rustfmt';
-  }
+  static linterName = 'rustfmt';
 
   /**
    * Verifies that all required programs are installed. Throws an error if programs are missing
    * @param dir - Directory to run the linting program in
    * @param prefix - Prefix to the lint command
    */
-  static async verifySetup(dir: string, prefix = ''): Promise<void> {
+  static async verifySetup(_dir: string, _prefix = ''): Promise<void> {
     // Verify that cargo format is installed
     if (!(await commandExists('cargo-fmt'))) {
       throw new Error('Cargo format is not installed');
@@ -71,19 +69,19 @@ export default class RustFmt {
 
     const diffs = output.stdout.split(/^Diff in /gm).slice(1);
     for (const diff of diffs) {
-      const [match, pathFull, line, message] = diff.match(PARSE_REGEX) || [];
+      const [match, pathFull, line, message] = PARSE_REGEX.exec(diff) || [];
       if (!match) {
         continue;
       }
       // Split on dir works for windows UNC paths, the substring strips out the
-      // left over '/' or '\\'
+      // Left over '/' or '\\'
       const path = pathFull.split(dir)[1].substring(1);
-      const lineNr = parseInt(line, 10);
+      const lineNr = Number.parseInt(line, 10);
       lintResult.error.push({
-        path,
         firstLine: lineNr,
         lastLine: lineNr,
-        message
+        message,
+        path
       });
     }
 

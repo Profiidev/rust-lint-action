@@ -1,17 +1,17 @@
 import { defineConfig } from 'vite';
-import { builtinModules } from 'module';
+import { builtinModules } from 'node:module';
 
 export default defineConfig({
   build: {
     lib: {
       entry: 'src/index.ts',
-      formats: ['cjs'],
-      fileName: 'index'
+      fileName: 'index',
+      formats: ['cjs']
     },
-    sourcemap: true,
     rollupOptions: {
       external: [...builtinModules, ...builtinModules.map((m) => `node:${m}`)]
-    }
+    },
+    sourcemap: true
   },
   plugins: []
 });
