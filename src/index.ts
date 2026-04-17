@@ -35,8 +35,6 @@ const runAction = async (): Promise<void> => {
   const gitEmail = core.getInput('git_user_email');
   const signCommits = core.getInput('git_sign_commits') === 'true';
 
-  const test = '';
-
   const octokit = new Octokit({
     auth: context.token
   });
