@@ -1,6 +1,7 @@
-import { LintResult } from '../utils/lint-result';
+import type { LintResult } from '../utils/lint-result';
 import Clippy from './clippy';
 import OxFmt from './oxfmt';
+import OxLint from './oxlint';
 import Prettier from './prettier';
 import RustFmt from './rustfmt';
 import Svelte from './svelte';
@@ -29,13 +30,15 @@ export interface Linter {
   ): LintResult;
 }
 
+// oxlint-disable-next-line sort-keys
 const linters: Record<string, Linter> = {
   clippy: Clippy,
-  rustfmt: RustFmt,
-  tsc: TSC,
+  oxlint: OxLint,
+  oxfmt: OxFmt,
   prettier: Prettier,
+  rustfmt: RustFmt,
   svelte: Svelte,
-  oxfmt: OxFmt
+  tsc: TSC
 };
 
 export default linters;

@@ -1,14 +1,12 @@
 import { run } from '../utils/action';
 import commandExists from '../utils/command-exists';
-import { initLintResult, LintResult } from '../utils/lint-result';
+import { type LintResult, initLintResult } from '../utils/lint-result';
 
 /**
  * https://prettier.io/
  */
 export default class Prettier {
-  static get linterName(): string {
-    return 'prettier';
-  }
+  static linterName = 'prettier';
 
   /**
    * Verifies that all required programs are installed. Throws an error if programs are missing
@@ -25,8 +23,8 @@ export default class Prettier {
     const commandPrefix = prefix || 'npx --no-install';
     try {
       run(`${commandPrefix} prettier -v`, { dir });
-    } catch (err) {
-      throw new Error(`${this.linterName} is not installed`);
+    } catch (error: any) {
+      throw new Error(`${this.linterName} is not installed`, { cause: error });
     }
   }
 
@@ -77,11 +75,11 @@ export default class Prettier {
 
     const paths = output.stdout.split(/\r?\n/);
     lintResult.error = paths.map((path) => ({
-      path,
       firstLine: 1,
       lastLine: 1,
       message:
-        "There are issues with this file's formatting, please run Prettier to fix the errors"
+        "There are issues with this file's formatting, please run Prettier to fix the errors",
+      path
     }));
 
     return lintResult;

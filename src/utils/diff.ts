@@ -13,7 +13,7 @@ interface DiffError {
  * @returns {DiffError[]} - Array of
  * parsed errors
  */
-export function parseErrorsFromDiff(diff: string): DiffError[] {
+export const parseErrorsFromDiff = (diff: string): DiffError[] => {
   const errors: DiffError[] = [];
   const files = parseDiff(diff);
   for (const file of files) {
@@ -22,12 +22,12 @@ export function parseErrorsFromDiff(diff: string): DiffError[] {
       const { oldStart, oldLines, changes } = chunk;
       const chunkDiff = changes.map((change) => change.content).join('\n');
       errors.push({
-        path,
         firstLine: oldStart,
         lastLine: oldStart + oldLines,
-        message: chunkDiff
+        message: chunkDiff,
+        path
       });
     }
   }
   return errors;
-}
+};

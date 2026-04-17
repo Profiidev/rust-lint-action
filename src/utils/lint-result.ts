@@ -28,20 +28,18 @@ export interface LintResult {
  * Returns an object for storing linting results
  * @returns {LintResult} - Default object
  */
-export function initLintResult(): LintResult {
-  return {
-    isSuccess: true, // Usually determined by the exit code of the linting command
-    warning: [],
-    error: []
-  };
-}
+export const initLintResult = (): LintResult => ({
+  error: [],
+  isSuccess: true, // Usually determined by the exit code of the linting command
+  warning: []
+});
 
 /**
  * Returns a text summary of the number of issues found when linting
  * @param {LintResult} lintResult - Parsed linter output
  * @returns {string} - Text summary
  */
-export function getSummary(lintResult: LintResult): string {
+export const getSummary = (lintResult: LintResult): string => {
   const nrErrors = lintResult.error.length;
   const nrWarnings = lintResult.warning.length;
   // Build and log a summary of linting errors/warnings
@@ -57,4 +55,4 @@ export function getSummary(lintResult: LintResult): string {
     return `${nrWarnings} warning${nrWarnings > 1 ? 's' : ''}`;
   }
   return 'no issues';
-}
+};

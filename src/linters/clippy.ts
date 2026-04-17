@@ -1,14 +1,12 @@
 import { run } from '../utils/action';
 import commandExists from '../utils/command-exists';
-import { initLintResult, LintResult } from '../utils/lint-result';
+import { type LintResult, initLintResult } from '../utils/lint-result';
 
 /**
  * https://rust-lang.github.io/rust-clippy/
  */
 export default class Clippy {
-  static get linterName(): string {
-    return 'clippy';
-  }
+  static linterName = 'clippy';
 
   /**
    * Verifies that all required programs are installed. Throws an error if programs are missing
@@ -24,8 +22,8 @@ export default class Clippy {
     // Verify that clippy is installed
     try {
       run(`${prefix} cargo clippy --version`, { dir });
-    } catch (err) {
-      throw new Error(`${this.linterName} is not installed`);
+    } catch (error: any) {
+      throw new Error(`${this.linterName} is not installed`, { cause: error });
     }
   }
 
@@ -51,9 +49,9 @@ export default class Clippy {
       );
     }
 
-    // clippy will throw an error if `--allow-dirty` is used when `--fix` isn't.
-    // in order to have tests run consistently and to help out users we remove `--allow-dirty`
-    // when not in fix
+    // Clippy will throw an error if `--allow-dirty` is used when `--fix` isn't.
+    // In order to have tests run consistently and to help out users we remove `--allow-dirty`
+    // When not in fix
     const localArgs = fix ? args : args.replace('--allow-dirty', '');
 
     const fixArg = fix ? '--fix' : '';
@@ -80,48 +78,49 @@ export default class Clippy {
     const lintResult = initLintResult();
 
     const lines = output.stdout.split('\n').map((line) => {
-      let parsedLine;
+      let parsedLine = undefined;
       try {
         let normalizedLine = line;
         if (process.platform === 'win32') {
-          normalizedLine = line.replace(/\\/gi, '\\\\');
+          normalizedLine = line.replace(/\\/gi, String.raw`\\`);
         }
         parsedLine = JSON.parse(normalizedLine);
-      } catch (err: any) {
-        throw Error(
-          `Error parsing ${this.name} JSON output: ${err.message}. Output: "${output.stdout}"`
+      } catch (error: any) {
+        throw new Error(
+          `Error parsing ${this.name} JSON output: ${error.message}. Output: "${output.stdout}"`,
+          { cause: error }
         );
       }
       return parsedLine;
     });
 
-    lines.forEach((line) => {
+    for (const line of lines) {
       if (line.reason === 'compiler-message') {
         if (line.message.level === 'warning') {
           const { code, message, spans } = line.message;
-          // don't add the message counting the warnings
+          // Don't add the message counting the warnings
           if (code !== null) {
             lintResult.warning.push({
-              path: spans[0].file_name,
               firstLine: spans[0].line_start,
               lastLine: spans[0].line_end,
-              message
+              message,
+              path: spans[0].file_name
             });
           }
         } else if (line.message.level === 'error') {
           const { code, message, spans } = line.message;
-          // don't add the message counting the errors
+          // Don't add the message counting the errors
           if (code !== null) {
             lintResult.warning.push({
-              path: spans[0].file_name,
               firstLine: spans[0].line_start,
               lastLine: spans[0].line_end,
-              message
+              message,
+              path: spans[0].file_name
             });
           }
         }
       }
-    });
+    }
 
     lintResult.isSuccess =
       output.status === 0 &&

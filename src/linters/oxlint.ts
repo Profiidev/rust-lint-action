@@ -2,8 +2,30 @@ import { run } from '../utils/action';
 import commandExists from '../utils/command-exists';
 import { type LintResult, initLintResult } from '../utils/lint-result';
 
-export default class OxFmt {
-  static linterName = 'oxfmt';
+interface OxLintResult {
+  diagnostics: OxLintDiagnostic[];
+}
+
+interface OxLintDiagnostic {
+  message: string;
+  severity: 'error' | 'warning' | 'info';
+  code: string;
+  url: string;
+  help: string;
+  filename: string;
+  labels: OxLintLabel[];
+}
+
+interface OxLintLabel {
+  span: OxLintSpan;
+}
+
+interface OxLintSpan {
+  line: number;
+}
+
+export default class OxLint {
+  static linterName = 'oxlint';
 
   /**
    * Verifies that all required programs are installed. Throws an error if programs are missing
@@ -11,15 +33,15 @@ export default class OxFmt {
    * @param prefix - Prefix to the lint command
    */
   static async verifySetup(dir: string, prefix = ''): Promise<void> {
-    // Verify that NPM is installed (required to execute OxFmt)
+    // Verify that NPM is installed (required to execute OxLint)
     if (!(await commandExists('npm'))) {
       throw new Error('npm is not installed');
     }
 
-    // Verify that oxfmt is installed
+    // Verify that oxlint is installed
     const commandPrefix = prefix || 'npx --no-install';
     try {
-      run(`${commandPrefix} oxfmt --version`, { dir });
+      run(`${commandPrefix} oxlint --version`, { dir });
     } catch (error: any) {
       throw new Error(`${this.linterName} is not installed`, { cause: error });
     }
@@ -42,8 +64,8 @@ export default class OxFmt {
     prefix = ''
   ): { status: number | null; stdout: string; stderr: string } {
     const commandPrefix = prefix || 'npx --no-install';
-    const fixArg = fix ? '' : '--check';
-    return run(`${commandPrefix} oxfmt ${fixArg} ${args}`, {
+    const fixArg = fix ? '--fix' : '';
+    return run(`${commandPrefix} oxlint ${fixArg} -f json ${args}`, {
       dir,
       ignoreErrors: true
     });
@@ -67,26 +89,21 @@ export default class OxFmt {
       return lintResult;
     }
 
-    const lines = output.stdout.split(/\r?\n/);
+    const result: OxLintResult = JSON.parse(output.stdout);
 
-    const errorPaths = lines
-      .map((line) => line.trim())
-      .filter(
-        (line) =>
-          line.length > 0 &&
-          !line.startsWith('Checking') &&
-          !line.startsWith('Format') &&
-          !line.startsWith('Finished')
-      )
-      .map((line) => line.split(' ')[0]);
+    for (const diagnostic of result.diagnostics) {
+      if (diagnostic.severity === 'info') {
+        continue;
+      }
 
-    lintResult.error = errorPaths.map((path) => ({
-      firstLine: 1,
-      lastLine: 1,
-      message:
-        "There are issues with this file's formatting, please run Prettier to fix the errors",
-      path
-    }));
+      lintResult.isSuccess = false;
+      lintResult[diagnostic.severity].push({
+        firstLine: diagnostic.labels[0].span.line,
+        lastLine: diagnostic.labels[0].span.line,
+        message: `${diagnostic.message} (code: ${diagnostic.code})\n${diagnostic.help}\nMore info: ${diagnostic.url}`,
+        path: diagnostic.filename
+      });
+    }
 
     return lintResult;
   }

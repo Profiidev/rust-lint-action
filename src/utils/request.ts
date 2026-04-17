@@ -1,5 +1,5 @@
-import { IncomingMessage } from 'http';
-import * as https from 'https';
+import type { IncomingMessage } from 'node:http';
+import * as https from 'node:https';
 
 export interface RequestOptions extends https.RequestOptions {
   body?: any;
@@ -16,7 +16,7 @@ interface RequestResponse {
  * @param {RequestOptions} options - Request options
  * @returns {Promise<RequestResponse>} - JSON response
  */
-export default function request(
+export default async function request(
   url: string | URL,
   options: RequestOptions
 ): Promise<RequestResponse> {
@@ -28,7 +28,8 @@ export default function request(
           data += chunk;
         });
         res.on('end', () => {
-          if (res.statusCode != null && res.statusCode >= 400) {
+          if (res.statusCode !== undefined && res.statusCode >= 400) {
+            // oxlint-disable-next-line no-unsafe-type-assertion
             const err = new Error(
               `Received status code ${res.statusCode}`
             ) as any;
@@ -36,7 +37,7 @@ export default function request(
             err.data = data;
             reject(err);
           } else {
-            resolve({ res, data: JSON.parse(data) });
+            resolve({ data: JSON.parse(data), res });
           }
         });
       })

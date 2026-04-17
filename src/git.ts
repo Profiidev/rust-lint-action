@@ -1,13 +1,13 @@
 import * as core from '@actions/core';
 
 import { run } from './utils/action';
-import { GithubContext } from './github/context';
+import type { GithubContext } from './github/context';
 
 /**
  * Fetches and checks out the remote Git branch (if it exists, the fork repository will be used)
  * @param {GithubContext} context - Information about the GitHub
  */
-export function checkOutRemoteBranch(context: GithubContext): void {
+export const checkOutRemoteBranch = (context: GithubContext): void => {
   if (context.repository.hasFork && context.repository.forkCloneUrl) {
     // Fork: Add fork repo as remote
     core.info(
@@ -47,65 +47,65 @@ export function checkOutRemoteBranch(context: GithubContext): void {
     );
     run(`git checkout ${context.branch}`);
   }
-}
+};
 
 /**
  * Stages and commits all changes using Git
  * @param {string} message - Git commit message
  * @param {boolean} skipVerification - Skip Git verification
  */
-export function commitChanges(
+export const commitChanges = (
   message: string,
   skipVerification: boolean
-): void {
+): void => {
   core.info(`Committing changes`);
   run(`git commit -am "${message}"${skipVerification ? ' --no-verify' : ''}`);
-}
+};
 
 /**
  * Returns the SHA of the head commit
  * @returns {string} - Head SHA
  */
-export function getHeadSha(): string {
+export const getHeadSha = (): string => {
   const sha = run('git rev-parse HEAD').stdout.trim();
   core.info(`SHA of last commit is "${sha}"`);
   return sha;
-}
+};
 
 /**
  * Checks whether there are differences from HEAD
  * @returns {boolean} - Boolean indicating whether changes exist
  */
-export function hasChanges(): boolean {
+export const hasChanges = (): boolean => {
   const output = run('git diff-index --name-status --exit-code HEAD --', {
     ignoreErrors: true
   });
   const hasChangedFiles = output.status === 1;
   core.info(`${hasChangedFiles ? 'Changes' : 'No changes'} found with Git`);
   return hasChangedFiles;
-}
+};
 
-export function getChanges(): string {
+export const getChanges = (): string => {
   const output = run('git diff --exit-code HEAD --', {
     ignoreErrors: true
   });
   return output.stdout.trim();
-}
+};
 
 /**
  * Pushes all changes to the remote repository
  * @param {boolean} skipVerification - Skip Git verification
  */
-export function pushChanges(skipVerification: boolean): void {
+export const pushChanges = (skipVerification: boolean): void => {
   core.info('Pushing changes with Git');
   run(`git push${skipVerification ? ' --no-verify' : ''}`);
-}
+};
 
 /**
  * Updates the global Git configuration with the provided information
  */
-export function setUserInfo(name: string, email: string): void {
+export const setUserInfo = (name: string, email: string): void => {
   core.info(`Setting Git user information`);
   run(`git config --global user.name "${name}"`);
   run(`git config --global user.email "${email}"`);
-}
+};

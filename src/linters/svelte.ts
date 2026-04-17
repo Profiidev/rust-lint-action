@@ -1,14 +1,12 @@
 import { run } from '../utils/action';
 import commandExists from '../utils/command-exists';
-import { initLintResult, LintResult } from '../utils/lint-result';
+import { type LintResult, initLintResult } from '../utils/lint-result';
 
 /**
  * https://github.com/sveltejs/prettier-plugin-svelte
  */
 export default class Svelte {
-  static get linterName(): string {
-    return 'svelte';
-  }
+  static linterName = 'svelte';
 
   /**
    * Verifies that all required programs are installed. Throws an error if programs are missing
@@ -25,8 +23,8 @@ export default class Svelte {
     const commandPrefix = prefix || 'npx -y';
     try {
       run(`${commandPrefix} sv -v`, { dir });
-    } catch (err) {
-      throw new Error(`${this.linterName} is not installed`);
+    } catch (error: any) {
+      throw new Error(`${this.linterName} is not installed`, { cause: error });
     }
   }
 
@@ -76,28 +74,28 @@ export default class Svelte {
       .map((lint) => {
         try {
           return JSON.parse(lint.substring(lint.indexOf(' ') + 1));
-        } catch (e) {}
+        } catch {
+          return undefined;
+        }
       })
-      .filter((lint) => {
-        return lint;
-      });
+      .filter((lint) => lint);
 
     lintResult.error = lints
       .filter((lint) => lint.type === 'ERROR')
       .map((lint) => ({
-        path: lint.filename,
         firstLine: lint.start.line,
         lastLine: lint.end.line,
-        message: lint.message
+        message: lint.message,
+        path: lint.filename
       }));
 
     lintResult.warning = lints
       .filter((lint) => lint.type === 'WARNING')
       .map((lint) => ({
-        path: lint.filename,
         firstLine: lint.start.line,
         lastLine: lint.end.line,
-        message: lint.message
+        message: lint.message,
+        path: lint.filename
       }));
 
     return lintResult;
