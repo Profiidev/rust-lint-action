@@ -1,6 +1,6 @@
 {
   "name": "rust-lint-action",
-  "version": "4.0.1",
+  "version": "4.1.0",
   "private": true,
   "description": "GitHub Action for detecting and fixing linting errors for rust",
   "license": "MIT",
