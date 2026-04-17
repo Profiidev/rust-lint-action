@@ -79,8 +79,8 @@ export default class RustFmt {
       const lineNr = Number.parseInt(line, 10);
       lintResult.error.push({
         firstLine: lineNr,
-        lastLine: lineNr,
         message,
+        lastLine: lineNr,
         path
       });
     }
