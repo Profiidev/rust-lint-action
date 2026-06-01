@@ -10,6 +10,7 @@ import { run } from '../utils/action';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { type GitMode, getFileMode } from '../utils/file';
+import { getChangedFiles } from '../git';
 
 /**
  * Creates a new check on GitHub which annotates the relevant commit with linting errors
@@ -159,13 +160,7 @@ export const apiCommit = async (
     )
   ).data.tree.sha;
 
-  run('git add -A');
-  const changes = run('git diff --cached --name-only --no-renames');
-  if (changes.status !== 0) {
-    throw new Error(`Error trying to get staged changes: ${changes.stderr}`);
-  }
-
-  const changedFiles = changes.stdout.split(/\r?\n/).filter((f) => f);
+  const changedFiles = getChangedFiles();
   if (changedFiles.length === 0) {
     core.info('No changes to commit');
     return;

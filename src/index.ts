@@ -6,7 +6,9 @@ import { apiCommit, createCheck } from './github/api';
 import { getContext } from './github/context';
 import linters from './linters';
 import { type LintResult, getSummary } from './utils/lint-result';
-import { Octokit } from '@octokit/core';
+import { getOctokit } from '@actions/github';
+import { client } from './forgejo-client/client.gen';
+import { forgejoApiCommit } from './forgejo/api';
 
 interface Check {
   lintCheckName: string;
@@ -34,10 +36,21 @@ const runAction = async (): Promise<void> => {
   const gitName = core.getInput('git_user_name');
   const gitEmail = core.getInput('git_user_email');
   const signCommits = core.getInput('git_sign_commits') === 'true';
+  const forgejo = core.getInput('forgejo') === 'true';
+  const api_url = core.getInput('api_url') || process.env.GITHUB_API_URL;
 
-  const octokit = new Octokit({
-    auth: context.token
-  });
+  const octokit = getOctokit(context.token);
+
+  if (api_url) {
+    client.setConfig({
+      baseUrl: api_url
+    });
+
+    client.interceptors.request.use((request, _) => {
+      request.headers.set('Authorization', `Bearer ${context.token}`);
+      return request;
+    });
+  }
 
   // If on a PR from fork: Display messages regarding action limitations
   if (context.eventName === 'pull_request' && context.repository.hasFork) {
@@ -162,17 +175,44 @@ const runAction = async (): Promise<void> => {
   core.startGroup('Create check runs with commit annotations');
   let groupClosed = false;
   try {
+    const [owner, repo] = context.repository.repoName.split('/');
+
     await Promise.all(
-      checks.map(async ({ lintCheckName, lintResult, summary }) =>
-        createCheck(
-          lintCheckName,
-          headSha,
-          context,
-          lintResult,
-          neutralCheckOnWarning,
-          summary
-        )
-      )
+      checks.map(async ({ lintCheckName, lintResult, summary }) => {
+        if (forgejo) {
+          core.info(
+            `Forgejo detected: Creating commit status instead of check run for ${lintCheckName}`
+          );
+          return octokit.rest.repos
+            .createCommitStatus({
+              context: lintCheckName,
+              description: `${lintCheckName} found ${summary}`,
+              owner,
+              repo,
+              sha: headSha,
+              state:
+                lintResult.isSuccess ||
+                (lintResult.warning.length === 0 &&
+                  lintResult.error.length === 0) ||
+                (neutralCheckOnWarning &&
+                  lintResult.warning.length > 0 &&
+                  lintResult.error.length === 0)
+                  ? 'success'
+                  : 'failure',
+              target_url: api_url
+            })
+            .then(() => {});
+        } else {
+          return createCheck(
+            lintCheckName,
+            headSha,
+            context,
+            lintResult,
+            neutralCheckOnWarning,
+            summary
+          );
+        }
+      })
     );
   } catch {
     core.endGroup();
@@ -190,7 +230,11 @@ const runAction = async (): Promise<void> => {
       linterWithFixes.join(', ')
     );
     if (signCommits) {
-      await apiCommit(octokit, context, message);
+      if (forgejo) {
+        await forgejoApiCommit(context, message, gitEmail, gitName);
+      } else {
+        await apiCommit(octokit, context, message);
+      }
     } else {
       git.commitChanges(message, skipVerification);
       git.pushChanges(skipVerification);
