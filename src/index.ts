@@ -37,14 +37,18 @@ const runAction = async (): Promise<void> => {
   const gitEmail = core.getInput('git_user_email');
   const signCommits = core.getInput('git_sign_commits') === 'true';
   const forgejo = core.getInput('forgejo') === 'true';
-  const api_url = core.getInput('api_url');
+  const api_url = core.getInput('api_url') || process.env.GITHUB_API_URL;
 
   const octokit = getOctokit(context.token);
 
   if (api_url) {
     client.setConfig({
-      auth: context.token,
       baseUrl: api_url
+    });
+
+    client.interceptors.request.use((request, _) => {
+      request.headers.set('Authorization', `Bearer ${context.token}`);
+      return request;
     });
   }
 
