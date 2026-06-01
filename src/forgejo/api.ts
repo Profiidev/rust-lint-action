@@ -53,8 +53,8 @@ export const forgejoApiCommit = async (
     }
 
     const errorMessage = `Failed to commit changes to Forgejo: ${
-      error ? JSON.stringify(error) : response?.statusText || 'Unknown error'
-    }`;
+      error ? JSON.stringify(error) : ''
+    } Response: ${response?.statusText || 'Unknown error'}`;
     throw new Error(errorMessage);
   }
   core.info(

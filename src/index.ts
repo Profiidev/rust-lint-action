@@ -43,6 +43,7 @@ const runAction = async (): Promise<void> => {
 
   if (api_url) {
     client.setConfig({
+      auth: context.token,
       baseUrl: api_url
     });
   }
