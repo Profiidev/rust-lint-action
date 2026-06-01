@@ -167,6 +167,9 @@ const runAction = async (): Promise<void> => {
     await Promise.all(
       checks.map(async ({ lintCheckName, lintResult, summary }) => {
         if (forgejo) {
+          core.info(
+            `Forgejo detected: Creating commit status instead of check run for ${lintCheckName}`
+          );
           return octokit.rest.repos
             .createCommitStatus({
               context: lintCheckName,
