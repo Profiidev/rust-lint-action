@@ -123,7 +123,7 @@ export const forgejoApiCommit = async (
         email,
         name
       },
-      branch: context.ref,
+      branch: context.branch,
       files,
       message
     },
