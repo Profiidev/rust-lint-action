@@ -45,8 +45,15 @@ export const forgejoApiCommit = async (
   });
 
   if (error || !response || !response.ok) {
+    if (response) {
+      const responseText = await response.text();
+      core.error(
+        `Forgejo API response: ${response.status} ${response.statusText}: ${responseText}`
+      );
+    }
+
     const errorMessage = `Failed to commit changes to Forgejo: ${
-      JSON.stringify(error) || response?.statusText || 'Unknown error'
+      error ? JSON.stringify(error) : response?.statusText || 'Unknown error'
     }`;
     throw new Error(errorMessage);
   }
