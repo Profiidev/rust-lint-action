@@ -124,6 +124,7 @@ export const forgejoApiCommit = async (
       files,
       message
     },
+    parseAs: 'text',
     path: {
       owner,
       repo
