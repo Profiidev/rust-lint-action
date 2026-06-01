@@ -28,7 +28,7 @@ export const forgejoApiCommit = async (
     });
   }
 
-  const { error, response } = await repoChangeFiles({
+  const { error, response, data } = await repoChangeFiles({
     body: {
       author: {
         email,
@@ -43,6 +43,8 @@ export const forgejoApiCommit = async (
       repo
     }
   });
+
+  core.info(`Data: ${JSON.stringify(data)}`);
 
   if (error || !response || !response.ok) {
     if (response) {
