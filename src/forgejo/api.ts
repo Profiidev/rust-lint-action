@@ -1,3 +1,4 @@
+import * as core from '@actions/core';
 import path from 'node:path';
 import { type ChangeFileOperation, repoChangeFiles } from '../forgejo-client';
 import { getChangedFiles } from '../git';
@@ -10,6 +11,7 @@ export const forgejoApiCommit = async (
   email: string,
   name: string
 ) => {
+  core.info(`Committing changes to Forgejo with message: "${message}"`);
   const [owner, repo] = context.repository.repoName.split('/');
   const changedFiles = getChangedFiles();
 
@@ -26,7 +28,7 @@ export const forgejoApiCommit = async (
     });
   }
 
-  await repoChangeFiles({
+  const { error, response } = await repoChangeFiles({
     body: {
       author: {
         email,
@@ -41,4 +43,14 @@ export const forgejoApiCommit = async (
       repo
     }
   });
+
+  if (error || !response || !response.ok) {
+    const errorMessage = `Failed to commit changes to Forgejo: ${
+      JSON.stringify(error) || response?.statusText || 'Unknown error'
+    }`;
+    throw new Error(errorMessage);
+  }
+  core.info(
+    `Successfully committed changes to Forgejo with message: "${message}"`
+  );
 };
