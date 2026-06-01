@@ -7,6 +7,8 @@ import { getContext } from './github/context';
 import linters from './linters';
 import { type LintResult, getSummary } from './utils/lint-result';
 import { getOctokit } from '@actions/github';
+import { client } from './forgejo-client/client.gen';
+import { forgejoApiCommit } from './forgejo/api';
 
 interface Check {
   lintCheckName: string;
@@ -38,6 +40,12 @@ const runAction = async (): Promise<void> => {
   const api_url = core.getInput('api_url');
 
   const octokit = getOctokit(context.token);
+
+  if (api_url) {
+    client.setConfig({
+      baseUrl: api_url
+    });
+  }
 
   // If on a PR from fork: Display messages regarding action limitations
   if (context.eventName === 'pull_request' && context.repository.hasFork) {
@@ -217,7 +225,11 @@ const runAction = async (): Promise<void> => {
       linterWithFixes.join(', ')
     );
     if (signCommits) {
-      await apiCommit(octokit, context, message);
+      if (forgejo) {
+        await forgejoApiCommit(context, message, gitEmail, gitName);
+      } else {
+        await apiCommit(octokit, context, message);
+      }
     } else {
       git.commitChanges(message, skipVerification);
       git.pushChanges(skipVerification);

@@ -109,3 +109,13 @@ export const setUserInfo = (name: string, email: string): void => {
   run(`git config --global user.name "${name}"`);
   run(`git config --global user.email "${email}"`);
 };
+
+export const getChangedFiles = (): string[] => {
+  run('git add -A');
+  const changes = run('git diff --cached --name-only --no-renames');
+  if (changes.status !== 0) {
+    throw new Error(`Error trying to get staged changes: ${changes.stderr}`);
+  }
+
+  return changes.stdout.split(/\r?\n/).filter((f) => f);
+};
