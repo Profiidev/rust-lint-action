@@ -114,6 +114,9 @@ export const forgejoApiCommit = async (
     }
   }
 
+  console.log(JSON.stringify(files));
+  console.log(JSON.stringify(context));
+
   const { error, response, data, request } = await repoChangeFiles({
     body: {
       author: {
