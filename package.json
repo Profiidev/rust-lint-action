@@ -21,8 +21,11 @@
     "parse-diff": "^0.11.1"
   },
   "devDependencies": {
+    "@hey-api/openapi-ts": "^0.98.1",
+    "@redocly/cli": "^2.31.5",
     "@types/command-exists": "1.2.3",
     "@types/node": "25.6.0",
+    "openapi-format": "^1.32.1",
     "oxfmt": "0.45.0",
     "oxlint": "1.60.0",
     "oxlint-tsgolint": "0.21.1",

@@ -44,5 +44,5 @@
     "typeAware": true,
     "typeCheck": true
   },
-  "ignorePatterns": ["dist/**"]
+  "ignorePatterns": ["dist/**", "src/forgejo-client/**"]
 }
