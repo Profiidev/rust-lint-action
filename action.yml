@@ -47,6 +47,13 @@ inputs:
     description: Whether the check run should conclude with a neutral status instead of success when the linter finds only warnings
     required: false
     default: 'false'
+  forgejo:
+    description: Enable or disable Forgejo support. If your repository is hosted on Forgejo, you need to set this to `true` to make the action work correctly.
+    required: false
+    default: 'false'
+  api_url:
+    description: The API URL to use for GitHub or Forgejo API requests. If not set, it will default to `https://api.github.com` for GitHub and `https://forgejo.com/api/v1` for Forgejo.
+    required: false
 
   # Rust
 
