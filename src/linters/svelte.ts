@@ -6,14 +6,14 @@ import { type LintResult, initLintResult } from '../utils/lint-result';
  * https://github.com/sveltejs/prettier-plugin-svelte
  */
 export default class Svelte {
-  static linterName = 'svelte';
+  public static linterName = 'svelte';
 
   /**
    * Verifies that all required programs are installed. Throws an error if programs are missing
    * @param dir - Directory to run the linting program in
    * @param prefix - Prefix to the lint command
    */
-  static async verifySetup(dir: string, prefix = ''): Promise<void> {
+  public static async verifySetup(dir: string, prefix = ''): Promise<void> {
     // Verify that NPM is installed (required to execute Prettier)
     if (!(await commandExists('npm'))) {
       throw new Error('NPM is not installed');
@@ -37,7 +37,7 @@ export default class Svelte {
    * @param prefix - Prefix to the lint command
    * @returns Output of the lint command
    */
-  static lint(
+  public static lint(
     dir: string,
     extensions: string[],
     args = '',
@@ -58,14 +58,14 @@ export default class Svelte {
    * @param output - Output of the lint command
    * @returns Parsed lint result
    */
-  static parseOutput(
+  public static parseOutput(
     dir: string,
     output: { status: number | null; stdout: string; stderr: string }
   ): LintResult {
     const lintResult = initLintResult();
     lintResult.isSuccess = output.status === 0;
 
-    if (lintResult.isSuccess || !output.stdout) {
+    if (!output.stdout) {
       return lintResult;
     }
 

@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import path from 'node:path';
 import * as core from '@actions/core';
 import * as git from './git';
 import { apiCommit, createCheck } from './github/api';
@@ -100,7 +100,7 @@ const runAction = async (): Promise<void> => {
       const args = core.getInput(`${linterId}_args`);
       const lintDirRel = core.getInput(`${linterId}_dir`) || '.';
       const prefix = core.getInput(`${linterId}_command_prefix`);
-      const lintDirAbs = join(context.workspace, lintDirRel);
+      const lintDirAbs = path.join(context.workspace, lintDirRel);
       const linterAutoFix =
         autoFix && core.getInput(`${linterId}_auto_fix`) === 'true';
 

@@ -2,20 +2,20 @@ import { run } from '../utils/action';
 import commandExists from '../utils/command-exists';
 import { type LintResult, initLintResult } from '../utils/lint-result';
 
-const PARSE_REGEX = /([\s\S]*?):(\d*):$([\s\S]*)/m;
+const PARSE_REGEX = /(?<pathFull>[\s\S]*?):(?<line>\d*):$(?<message>[\s\S]*)/m;
 
 /**
  * https://github.com/rust-lang/rustfmt
  */
 export default class RustFmt {
-  static linterName = 'rustfmt';
+  public static linterName = 'rustfmt';
 
   /**
    * Verifies that all required programs are installed. Throws an error if programs are missing
    * @param dir - Directory to run the linting program in
    * @param prefix - Prefix to the lint command
    */
-  static async verifySetup(_dir: string, _prefix = ''): Promise<void> {
+  public static async verifySetup(_dir: string, _prefix = ''): Promise<void> {
     // Verify that cargo format is installed
     if (!(await commandExists('cargo-fmt'))) {
       throw new Error('Cargo format is not installed');
@@ -31,7 +31,7 @@ export default class RustFmt {
    * @param prefix - Prefix to the lint command
    * @returns Output of the lint command
    */
-  static lint(
+  public static lint(
     dir: string,
     extensions: string[],
     args = '-- --color=never',
@@ -57,7 +57,7 @@ export default class RustFmt {
    * @param output - Output of the lint command
    * @returns Parsed lint result
    */
-  static parseOutput(
+  public static parseOutput(
     dir: string,
     output: { status: number | null; stdout: string; stderr: string }
   ): LintResult {

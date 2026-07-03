@@ -6,14 +6,14 @@ import { type LintResult, initLintResult } from '../utils/lint-result';
  * https://rust-lang.github.io/rust-clippy/
  */
 export default class Clippy {
-  static linterName = 'clippy';
+  public static linterName = 'clippy';
 
   /**
    * Verifies that all required programs are installed. Throws an error if programs are missing
    * @param dir - Directory to run the linting program in
    * @param prefix - Prefix to the lint command
    */
-  static async verifySetup(dir: string, prefix = ''): Promise<void> {
+  public static async verifySetup(dir: string, prefix = ''): Promise<void> {
     // Verify that cargo is installed (required to execute clippy)
     if (!(await commandExists('cargo'))) {
       throw new Error('cargo is not installed');
@@ -36,7 +36,7 @@ export default class Clippy {
    * @param prefix - Prefix to the lint command
    * @returns Output of the lint command
    */
-  static lint(
+  public static lint(
     dir: string,
     extensions: string[],
     args = '',
@@ -71,7 +71,7 @@ export default class Clippy {
    * @param output - Output of the lint command
    * @returns Parsed lint result
    */
-  static parseOutput(
+  public static parseOutput(
     dir: string,
     output: { status: number | null; stdout: string; stderr: string }
   ): LintResult {
