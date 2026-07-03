@@ -85,7 +85,7 @@ export default class OxLint {
     const lintResult = initLintResult();
     lintResult.isSuccess = output.status === 0;
 
-    if (lintResult.isSuccess || !output.stdout) {
+    if (!output.stdout) {
       return lintResult;
     }
 
