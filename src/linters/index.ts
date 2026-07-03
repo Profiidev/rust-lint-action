@@ -14,20 +14,20 @@ export interface Linter {
   /** Name of the linter. */
   readonly linterName: string;
   /** Verifies that the linter is installed and can be run. */
-  verifySetup(dir: string, prefix?: string): Promise<void>;
+  verifySetup: (dir: string, prefix?: string) => Promise<void>;
   /** Runs the linter. */
-  lint(
+  lint: (
     dir: string,
     extensions: string[],
     args?: string,
     fix?: boolean,
     prefix?: string
-  ): { status: number | null; stdout: string; stderr: string };
+  ) => { status: number | null; stdout: string; stderr: string };
   /** Parses the output of the linter. */
-  parseOutput(
+  parseOutput: (
     dir: string,
     output: { status: number | null; stdout: string; stderr: string }
-  ): LintResult;
+  ) => LintResult;
 }
 
 // oxlint-disable-next-line sort-keys

@@ -8,14 +8,14 @@ import { removeTrailingPeriod } from '../utils/string';
  * https://www.typescriptlang.org/docs/handbook/compiler-options.html
  */
 export default class TSC {
-  static linterName = 'TypeScript';
+  public static linterName = 'TypeScript';
 
   /**
    * Verifies that all required programs are installed. Throws an error if programs are missing
    * @param dir - Directory to run the linting program in
    * @param prefix - Prefix to the lint command
    */
-  static async verifySetup(dir: string, prefix = ''): Promise<void> {
+  public static async verifySetup(dir: string, prefix = ''): Promise<void> {
     // Verify that NPM is installed (required to execute ESLint)
     if (!(await commandExists('npm'))) {
       throw new Error('NPM is not installed');
@@ -39,7 +39,7 @@ export default class TSC {
    * @param prefix - Prefix to the lint command
    * @returns Output of the lint command
    */
-  static lint(
+  public static lint(
     dir: string,
     extensions: string[],
     args = '',
@@ -64,7 +64,7 @@ export default class TSC {
    * @param output - Output of the lint command
    * @returns Parsed lint result
    */
-  static parseOutput(
+  public static parseOutput(
     dir: string,
     output: { status: number | null; stdout: string; stderr: string }
   ): LintResult {

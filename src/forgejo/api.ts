@@ -32,7 +32,7 @@ export const forgejoApiCommit = async (
     const metaAndPath = chunks[i];
     // oxlint-disable-next-line prefer-regexp-exec
     const match = metaAndPath.match(
-      /^:(\d+) (\d+) ([a-f0-9]+) ([a-f0-9]+) ([ADMRUXT]\d*)$/i
+      /^:(?<srcMode>\d+) (?<dstMode>\d+) (?<srcSha>[a-f0-9]+) (?<dstSha>[a-f0-9]+) (?<status>[ADMRUXT]\d*)$/i
     );
 
     if (!match) {
