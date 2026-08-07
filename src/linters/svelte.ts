@@ -98,6 +98,9 @@ export default class Svelte {
         path: lint.filename
       }));
 
+    lintResult.isSuccess =
+      lintResult.error.length === 0 && lintResult.warning.length === 0;
+
     return lintResult;
   }
 }
