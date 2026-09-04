@@ -28,6 +28,7 @@
     "eslint-plugin-unicorn/no-await-expression-member": "off",
     "eslint/no-use-before-define": "off",
     "eslint/no-empty-function": "off",
+    "one-var": "off",
     "typescript/no-extraneous-class": "off",
     "eslint/max-params": "off",
     "sort-imports": [
