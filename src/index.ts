@@ -46,7 +46,7 @@ const runAction = async (): Promise<void> => {
       baseUrl: api_url
     });
 
-    client.interceptors.request.use((request, _) => {
+    client.interceptors.request.use((request) => {
       request.headers.set('Authorization', `Bearer ${context.token}`);
       return request;
     });
