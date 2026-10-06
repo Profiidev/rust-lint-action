@@ -29,9 +29,9 @@ export default async function request(
         });
         res.on('end', () => {
           if (res.statusCode !== undefined && res.statusCode >= 400) {
-            // oxlint-disable-next-line no-unsafe-type-assertion
             const err = new Error(
               `Received status code ${res.statusCode}`
+              // oxlint-disable-next-line no-unsafe-type-assertion
             ) as any;
             err.response = res;
             err.data = data;
