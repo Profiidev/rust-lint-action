@@ -63,7 +63,8 @@ export default class OxFmt {
     const lintResult = initLintResult();
     lintResult.isSuccess = output.status === 0;
 
-    if (!output.stdout) {
+    // On success stdout only holds a summary line ("All matched files use the correct format.")
+    if (lintResult.isSuccess || !output.stdout) {
       return lintResult;
     }
 
