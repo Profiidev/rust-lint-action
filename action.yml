@@ -51,6 +51,14 @@ inputs:
     description: Enable or disable Forgejo support. If your repository is hosted on Forgejo, you need to set this to `true` to make the action work correctly.
     required: false
     default: 'false'
+  results_file:
+    description: Write the lint results to this file instead of creating check runs. Use on untrusted runs (PRs from forks) and upload the file as an artifact
+    required: false
+    default: ''
+  publish_results:
+    description: Only create check runs from a results file written with `results_file`. Must run on a `workflow_run` event. No linters are run
+    required: false
+    default: ''
   api_url:
     description: The API URL to use for GitHub or Forgejo API requests. If not set, it will default to `https://api.github.com` for GitHub and `https://forgejo.com/api/v1` for Forgejo.
     required: false

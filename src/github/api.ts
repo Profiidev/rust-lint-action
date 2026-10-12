@@ -16,8 +16,8 @@ import { getChangedFiles } from '../git';
  * Creates a new check on GitHub which annotates the relevant commit with linting errors
  * @param {string} linterName - Name of the linter for which a check should be created
  * @param {string} sha - SHA of the commit which should be annotated
- * @param {GithubContext} context - Information about the GitHub repository and
- * action trigger event
+ * @param {string} repoName - Repository in `owner/repo` format
+ * @param {string} token - GitHub token used to create the check
  * @param {LintResult} lintResult - Parsed lint result
  * @param {boolean} neutralCheckOnWarning - Whether the check run should conclude as neutral if
  * there are only warnings
@@ -26,7 +26,8 @@ import { getChangedFiles } from '../git';
 export const createCheck = async (
   linterName: string,
   sha: string,
-  context: GithubContext,
+  repoName: string,
+  token: string,
   lintResult: LintResult,
   neutralCheckOnWarning: boolean,
   summary: string
@@ -79,13 +80,13 @@ export const createCheck = async (
     );
     core.debug(`Sending with body ${JSON.stringify(body)}`);
     await request(
-      `${process.env.GITHUB_API_URL}/repos/${context.repository.repoName}/check-runs`,
+      `${process.env.GITHUB_API_URL}/repos/${repoName}/check-runs`,
       {
         body,
         headers: {
           // "Accept" header is required to access Checks API during preview period
           Accept: 'application/vnd.github.antiope-preview+json',
-          Authorization: `Bearer ${context.token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
           'User-Agent': actionName
         },
