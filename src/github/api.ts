@@ -1,122 +1,12 @@
 import * as core from '@actions/core';
 
-import { name as actionName } from '../../package.json';
 import type { GithubContext } from './context';
-import type { LintResult } from '../utils/lint-result';
-import request from '../utils/request';
-import { capitalizeFirstLetter } from '../utils/string';
 import type { Octokit } from '@octokit/core';
 import { run } from '../utils/action';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { type GitMode, getFileMode } from '../utils/file';
 import { getChangedFiles } from '../git';
-
-/**
- * Creates a new check on GitHub which annotates the relevant commit with linting errors
- * @param {string} linterName - Name of the linter for which a check should be created
- * @param {string} sha - SHA of the commit which should be annotated
- * @param {string} repoName - Repository in `owner/repo` format
- * @param {string} token - GitHub token used to create the check
- * @param {LintResult} lintResult - Parsed lint result
- * @param {boolean} neutralCheckOnWarning - Whether the check run should conclude as neutral if
- * there are only warnings
- * @param {string} summary - Summary for the GitHub check
- */
-export const createCheck = async (
-  linterName: string,
-  sha: string,
-  repoName: string,
-  token: string,
-  lintResult: LintResult,
-  neutralCheckOnWarning: boolean,
-  summary: string
-): Promise<void> => {
-  let annotations: any[] = [];
-  for (const level of ['error', 'warning'] as const) {
-    annotations.push(
-      ...lintResult[level].map((result) => ({
-        annotation_level: level === 'warning' ? 'warning' : 'failure',
-        end_line: result.lastLine,
-        message: result.message,
-        path: result.path,
-        start_line: result.firstLine
-      }))
-    );
-  }
-
-  // Only use the first 50 annotations (limit for a single API request)
-  if (annotations.length > 50) {
-    core.info(
-      `There are more than 50 errors/warnings from ${linterName}. Annotations are created for the first 50 issues only.`
-    );
-    annotations = annotations.slice(0, 50);
-  }
-
-  let conclusion: 'neutral' | 'success' | 'failure' = 'success';
-  if (lintResult.isSuccess) {
-    if (annotations.length > 0 && neutralCheckOnWarning) {
-      conclusion = 'neutral';
-    } else {
-      conclusion = 'success';
-    }
-  } else {
-    conclusion = 'failure';
-  }
-
-  const body = {
-    conclusion,
-    head_sha: sha,
-    name: linterName,
-    output: {
-      annotations,
-      summary: `${linterName} found ${summary}`,
-      title: capitalizeFirstLetter(summary)
-    }
-  };
-  try {
-    core.info(
-      `Creating GitHub check with ${conclusion} conclusion and ${annotations.length} annotations for ${linterName}…`
-    );
-    core.debug(`Sending with body ${JSON.stringify(body)}`);
-    await request(
-      `${process.env.GITHUB_API_URL}/repos/${repoName}/check-runs`,
-      {
-        body,
-        headers: {
-          // "Accept" header is required to access Checks API during preview period
-          Accept: 'application/vnd.github.antiope-preview+json',
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          'User-Agent': actionName
-        },
-        method: 'POST'
-      }
-    );
-    core.info(`${linterName} check created successfully`);
-  } catch (error: any) {
-    let errorMessage = error.message;
-    if (error.data) {
-      try {
-        const errorData = JSON.parse(error.data);
-        if (errorData.message) {
-          errorMessage += `. ${errorData.message}`;
-        }
-        if (errorData.documentation_url) {
-          errorMessage += ` ${errorData.documentation_url}`;
-        }
-      } catch {
-        // Ignore
-      }
-    }
-    core.error(errorMessage);
-
-    throw new Error(
-      `Error trying to create GitHub check for ${linterName}: ${errorMessage}`,
-      { cause: error }
-    );
-  }
-};
 
 export const apiCommit = async (
   octokit: Octokit,

@@ -2,7 +2,8 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import * as core from '@actions/core';
 import * as git from './git';
-import { apiCommit, createCheck } from './github/api';
+import { apiCommit } from './github/api';
+import { Checks } from './github/status';
 import { getContext, parseActionEnv, parseEnvFile } from './github/context';
 import linters from './linters';
 import {
@@ -26,77 +27,11 @@ interface ResultsFile {
   checks: { linterId: string; lintResult: LintResult }[];
 }
 
-interface CheckOptions {
-  octokit: ReturnType<typeof getOctokit>;
-  token: string;
-  forgejo: boolean;
-  neutralCheckOnWarning: boolean;
-  api_url?: string;
-}
-
 const formatCheckName = (template: string, linter: string, dir: string) =>
   template
     .replace(/\${linter}/g, linter)
     .replace(/\${dir}/g, dir !== '.' ? dir : '')
     .trim();
-
-/**
- * Creates a check run (or Forgejo commit status) per linter
- */
-const createChecks = async (
-  checks: Check[],
-  headSha: string,
-  repoName: string,
-  { octokit, token, forgejo, neutralCheckOnWarning, api_url }: CheckOptions
-): Promise<void> => {
-  core.startGroup('Create check runs with commit annotations');
-  try {
-    const [owner, repo] = repoName.split('/');
-
-    await Promise.all(
-      checks.map(async ({ lintCheckName, lintResult, summary }) => {
-        if (forgejo) {
-          core.info(
-            `Forgejo detected: Creating commit status instead of check run for ${lintCheckName}`
-          );
-          return octokit.rest.repos
-            .createCommitStatus({
-              context: lintCheckName,
-              description: `${lintCheckName} found ${summary}`,
-              owner,
-              repo,
-              sha: headSha,
-              state:
-                lintResult.isSuccess ||
-                (lintResult.warning.length === 0 &&
-                  lintResult.error.length === 0) ||
-                (neutralCheckOnWarning &&
-                  lintResult.warning.length > 0 &&
-                  lintResult.error.length === 0)
-                  ? 'success'
-                  : 'failure',
-              target_url: api_url
-            })
-            .then(() => {});
-        } else {
-          return createCheck(
-            lintCheckName,
-            headSha,
-            repoName,
-            token,
-            lintResult,
-            neutralCheckOnWarning,
-            summary
-          );
-        }
-      })
-    );
-  } catch {
-    core.warning('Some check runs could not be created.');
-  } finally {
-    core.endGroup();
-  }
-};
 
 const toIssues = (issues: unknown): LintIssue[] =>
   Array.isArray(issues)
@@ -151,12 +86,20 @@ const publishResults = async (file: string): Promise<void> => {
     });
   }
 
-  await createChecks(checks, headSha, event.repository.full_name, {
+  const status = new Checks({
     forgejo: false,
     neutralCheckOnWarning: core.getInput('neutral_check_on_warning') === 'true',
     octokit: getOctokit(token),
-    token
+    repoName: event.repository.full_name,
+    sha: headSha
   });
+  core.startGroup('Create check runs with commit annotations');
+  await Promise.all(
+    checks.map(async ({ lintCheckName, lintResult, summary }) =>
+      status.complete(lintCheckName, lintResult, summary)
+    )
+  );
+  core.endGroup();
 
   if (
     checks.some((c) => !c.lintResult.isSuccess) &&
@@ -244,105 +187,118 @@ const runAction = async (): Promise<void> => {
     git.checkOutRemoteBranch(context);
   }
 
-  let headSha = git.getHeadSha();
+  const headSha = git.getHeadSha();
 
   let hasFailures = false;
   const checks: Check[] = [];
   const linterWithFixes: string[] = [];
   let previousChanges = '';
 
-  // Loop over all available linters
-  for (const [linterId, linter] of Object.entries(linters)) {
-    // Determine whether the linter should be executed on the commit
-    if (core.getInput(linterId) === 'true') {
-      core.startGroup(`Run ${linter.linterName}`);
-
-      const fileExtensions = core.getInput(`${linterId}_extensions`, {
-        required: true
-      });
-      const args = core.getInput(`${linterId}_args`);
+  const enabled = Object.entries(linters)
+    .filter(([linterId]) => core.getInput(linterId) === 'true')
+    .map(([linterId, linter]) => {
       const lintDirRel = core.getInput(`${linterId}_dir`) || '.';
-      const prefix = core.getInput(`${linterId}_command_prefix`);
-      const lintDirAbs = path.join(context.workspace, lintDirRel);
-      const linterAutoFix =
-        autoFix && core.getInput(`${linterId}_auto_fix`) === 'true';
+      return {
+        lintCheckName: formatCheckName(
+          checkName,
+          linter.linterName,
+          lintDirRel
+        ),
+        lintDirRel,
+        linter,
+        linterId
+      };
+    });
 
-      if (!existsSync(lintDirAbs)) {
-        throw new Error(
-          `Directory ${lintDirAbs} for ${linter.linterName} doesn't exist`
-        );
-      }
-
-      // Check that the linter and its dependencies are installed
-      core.info(`Verifying setup for ${linter.linterName}…`);
-      // oxlint-disable-next-line no-await-in-loop
-      await linter.verifySetup(lintDirAbs, prefix);
-      core.info(`Verified ${linter.linterName} setup`);
-
-      // Determine which files should be linted
-      const fileExtList = fileExtensions.split(',');
-      core.info(
-        `Will use ${linter.linterName} to check the files with extensions ${fileExtList.join(',')}`
-      );
-
-      // Lint and optionally auto-fix the matching files, parse code style violations
-      core.info(
-        `Linting ${linterAutoFix ? 'and auto-fixing ' : ''}files in ${lintDirAbs} ` +
-          `with ${linter.linterName} ${args ? `and args: ${args}` : ''}…`
-      );
-      const lintOutput = linter.lint(
-        lintDirAbs,
-        fileExtList,
-        args,
-        linterAutoFix,
-        prefix
-      );
-
-      // Parse output of linting command
-      const lintResult = linter.parseOutput(context.workspace, lintOutput);
-      const summary = getSummary(lintResult);
-      core.info(
-        `${linter.linterName} found ${summary} (${lintResult.isSuccess ? 'success' : 'failure'})`
-      );
-
-      if (!lintResult.isSuccess) {
-        hasFailures = true;
-      }
-
-      if (linterAutoFix && commit && git.hasChanges()) {
-        const changes = git.getChanges();
-        if (changes !== previousChanges) {
-          previousChanges = changes;
-          linterWithFixes.push(linter.linterName);
-        }
-      }
-
-      const lintCheckName = formatCheckName(
-        checkName,
-        linter.linterName,
-        lintDirRel
-      );
-
-      checks.push({
-        lintCheckName,
-        lintResult,
-        linterId,
-        summary
+  // Untrusted runs (e.g. PRs from forks) hand the results to a privileged workflow instead
+  const status = resultsFile
+    ? undefined
+    : new Checks({
+        forgejo,
+        neutralCheckOnWarning,
+        octokit,
+        repoName: context.repository.repoName,
+        sha: headSha,
+        targetUrl: api_url
       });
+  await status?.queue(enabled.map((e) => e.lintCheckName));
 
-      core.endGroup();
+  for (const { linterId, linter, lintDirRel, lintCheckName } of enabled) {
+    core.startGroup(`Run ${linter.linterName}`);
+    // oxlint-disable-next-line no-await-in-loop
+    await status?.start(lintCheckName);
+
+    const fileExtensions = core.getInput(`${linterId}_extensions`, {
+      required: true
+    });
+    const args = core.getInput(`${linterId}_args`);
+    const prefix = core.getInput(`${linterId}_command_prefix`);
+    const lintDirAbs = path.join(context.workspace, lintDirRel);
+    const linterAutoFix =
+      autoFix && core.getInput(`${linterId}_auto_fix`) === 'true';
+
+    if (!existsSync(lintDirAbs)) {
+      throw new Error(
+        `Directory ${lintDirAbs} for ${linter.linterName} doesn't exist`
+      );
     }
-  }
 
-  // Add commit annotations after running all linters. To be displayed on pull requests, the
-  // Annotations must be added to the last commit on the branch. This can either be a user commit or
-  // One of the auto-fix commits
-  if (isPullRequest && autoFix) {
-    headSha = git.getHeadSha();
+    // Check that the linter and its dependencies are installed
+    core.info(`Verifying setup for ${linter.linterName}…`);
+    // oxlint-disable-next-line no-await-in-loop
+    await linter.verifySetup(lintDirAbs, prefix);
+    core.info(`Verified ${linter.linterName} setup`);
+
+    // Determine which files should be linted
+    const fileExtList = fileExtensions.split(',');
+    core.info(
+      `Will use ${linter.linterName} to check the files with extensions ${fileExtList.join(',')}`
+    );
+
+    // Lint and optionally auto-fix the matching files, parse code style violations
+    core.info(
+      `Linting ${linterAutoFix ? 'and auto-fixing ' : ''}files in ${lintDirAbs} ` +
+        `with ${linter.linterName} ${args ? `and args: ${args}` : ''}…`
+    );
+    const lintOutput = linter.lint(
+      lintDirAbs,
+      fileExtList,
+      args,
+      linterAutoFix,
+      prefix
+    );
+
+    // Parse output of linting command
+    const lintResult = linter.parseOutput(
+      context.workspace,
+      lintOutput,
+      lintDirRel
+    );
+    const summary = getSummary(lintResult);
+    core.info(
+      `${linter.linterName} found ${summary} (${lintResult.isSuccess ? 'success' : 'failure'})`
+    );
+
+    if (!lintResult.isSuccess) {
+      hasFailures = true;
+    }
+
+    if (linterAutoFix && commit && git.hasChanges()) {
+      const changes = git.getChanges();
+      if (changes !== previousChanges) {
+        previousChanges = changes;
+        linterWithFixes.push(linter.linterName);
+      }
+    }
+
+    checks.push({ lintCheckName, lintResult, linterId, summary });
+    // oxlint-disable-next-line no-await-in-loop
+    await status?.complete(lintCheckName, lintResult, summary);
+
+    core.endGroup();
   }
 
   if (resultsFile) {
-    // Untrusted run (e.g. PR from fork): hand the results to a privileged workflow instead
     const results: ResultsFile = {
       checks: checks.map(({ linterId, lintResult }) => ({
         lintResult,
@@ -351,14 +307,6 @@ const runAction = async (): Promise<void> => {
     };
     writeFileSync(resultsFile, JSON.stringify(results));
     core.info(`Wrote lint results to ${resultsFile}`);
-  } else {
-    await createChecks(checks, headSha, context.repository.repoName, {
-      api_url,
-      forgejo,
-      neutralCheckOnWarning,
-      octokit,
-      token: context.token
-    });
   }
 
   if (git.hasChanges()) {
@@ -386,8 +334,24 @@ const runAction = async (): Promise<void> => {
   }
 };
 
+/**
+ * Post step: fails all checks the main step queued but never completed, e.g. because a linter
+ * crashed or the job was cancelled
+ */
+const runPost = async (): Promise<void> => {
+  const checks = Checks.restore({
+    neutralCheckOnWarning: false,
+    octokit: getOctokit(core.getInput('github_token', { required: true })),
+    targetUrl: core.getInput('api_url') || process.env.GITHUB_API_URL
+  });
+  await checks?.failRemaining();
+};
+
+const isPost = core.getState('isPost') === 'true';
+core.saveState('isPost', 'true');
+
 // oxlint-disable-next-line use-unknown-in-catch-callback-variable
-runAction().catch((error: any) => {
+(isPost ? runPost() : runAction()).catch((error: any) => {
   core.debug(error.stack || 'No error stack trace');
   core.setFailed(error.message);
 });

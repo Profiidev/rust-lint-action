@@ -2,6 +2,18 @@
 
 forked from https://github.com/wearerequired/lint-action
 
+## Supported linters
+
+- Rust: `clippy`, `rustfmt`
+- JavaScript/TypeScript: `eslint`, `oxlint`, `oxfmt`, `prettier`, `tsc`, `svelte`
+- Python: `mypy`, `ty`, `basedpyright`, `autopep8`, `ruff`, `black`
+
+Linters run before formatters, so all auto-fixes end up in a single commit.
+
+## Check status
+
+A check run (or commit status on Forgejo) is queued for every enabled linter when the action starts, set to in progress while its linter runs and completed as soon as the linter finishes. Checks left over by a crashed or cancelled run are marked as failed by the action's post step.
+
 ## PRs from forks
 
 `pull_request` runs from forks get a read-only token, so check runs can't be created there. Write the results to a file and publish them from a privileged `workflow_run` workflow, which never runs code from the fork:
