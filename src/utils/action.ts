@@ -1,4 +1,5 @@
 import { execFileSync, execSync } from 'node:child_process';
+import { stripVTControlCharacters } from 'node:util';
 import * as core from '@actions/core';
 
 interface RunOptions {
@@ -40,6 +41,9 @@ interface RunOutput {
   stderr: string;
 }
 
+// Linters color their output in CI (e.g. GITHUB_ACTIONS is set), which breaks the parsers
+const clean = (output: string): string => stripVTControlCharacters(output).trim();
+
 const execute = (
   label: string,
   exec: (cwd: string | undefined) => string,
@@ -57,7 +61,7 @@ const execute = (
     const output = {
       status: 0,
       stderr: '',
-      stdout: stdout.trim()
+      stdout: clean(stdout)
     };
 
     core.debug(`Stdout: ${output.stdout}`);
@@ -67,8 +71,8 @@ const execute = (
     if (optionsWithDefaults.ignoreErrors) {
       const output = {
         status: error.status as number | null, // oxlint-disable-line no-unsafe-type-assertion
-        stderr: (error.stderr || '').toString().trim(),
-        stdout: (error.stdout || '').toString().trim()
+        stderr: clean((error.stderr || '').toString()),
+        stdout: clean((error.stdout || '').toString())
       };
 
       core.debug(`Exit code: ${output.status}`);
