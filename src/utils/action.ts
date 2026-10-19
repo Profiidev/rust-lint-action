@@ -42,7 +42,8 @@ interface RunOutput {
 }
 
 // Linters color their output in CI (e.g. GITHUB_ACTIONS is set), which breaks the parsers
-const clean = (output: string): string => stripVTControlCharacters(output).trim();
+const clean = (output: string): string =>
+  stripVTControlCharacters(output).trim();
 
 const execute = (
   label: string,
