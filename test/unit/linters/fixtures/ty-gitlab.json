@@ -1,0 +1,28 @@
+[
+  {
+    "check_name": "invalid-assignment",
+    "description": "invalid-assignment: Object of type `Literal[\"a\"]` is not assignable to `int`",
+    "severity": "major",
+    "fingerprint": "1f0e3dad99908345",
+    "location": {
+      "path": "src/app.py",
+      "positions": {
+        "begin": { "line": 2, "column": 10 },
+        "end": { "line": 2, "column": 13 }
+      }
+    }
+  },
+  {
+    "check_name": "unused-ignore-comment",
+    "description": "unused-ignore-comment: Unused blanket `type: ignore` directive",
+    "severity": "minor",
+    "fingerprint": "a87ff679a2f3e71d",
+    "location": {
+      "path": "src/util.py",
+      "positions": {
+        "begin": { "line": 7, "column": 15 },
+        "end": { "line": 7, "column": 29 }
+      }
+    }
+  }
+]

@@ -25,7 +25,8 @@ interface CodeQualityIssue {
  */
 export const codeQualityToLintResult = (
   report: CodeQualityIssue[],
-  relativeDir: string
+  relativeDir: string,
+  errorSeverities: string[] = ['major', 'critical', 'blocker']
 ): LintResult => {
   const toIssue = (c: CodeQualityIssue): LintIssue => ({
     firstLine: c.location.positions.begin.line,
@@ -35,8 +36,12 @@ export const codeQualityToLintResult = (
   });
 
   return {
-    error: report.filter((c) => c.severity === 'major').map(toIssue),
+    error: report
+      .filter((c) => errorSeverities.includes(c.severity))
+      .map(toIssue),
     isSuccess: true,
-    warning: report.filter((c) => c.severity !== 'major').map(toIssue)
+    warning: report
+      .filter((c) => !errorSeverities.includes(c.severity))
+      .map(toIssue)
   };
 };

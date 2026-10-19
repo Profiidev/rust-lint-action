@@ -1,0 +1,5 @@
+src/app.py:3: error: Incompatible types in assignment (expression has type "str", variable has type "int")  [assignment]
+./src/util.py:10: note: Revealed type is "builtins.int"
+./src/util.py:12: warning: unused "type: ignore" comment  [unused-ignore]
+./src/util.py:20: error: Function is missing a return type annotation  [no-untyped-def]
+Found 2 errors in 2 files (checked 4 source files)

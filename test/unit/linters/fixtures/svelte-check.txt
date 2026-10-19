@@ -1,0 +1,5 @@
+1702046600243 START "/home/runner/work/app"
+1702046600297 {"type":"ERROR","filename":"src/routes/+page.svelte","start":{"line":3,"character":6},"end":{"line":3,"character":9},"message":"Type 'number' is not assignable to type 'string'.","code":2322,"source":"ts"}
+1702046600297 {"type":"WARNING","filename":"src/lib/Button.svelte","start":{"line":10,"character":0},"end":{"line":12,"character":6},"message":"`<div>` with a click handler must have an ARIA role\nhttps://svelte.dev/e/a11y_no_static_element_interactions","code":"a11y_no_static_element_interactions","source":"svelte"}
+1702046600298 {"type":"ERROR","filename":"src/lib/store.ts","start":{"line":0,"character":9},"end":{"line":0,"character":14},"message":"Module '\"svelte/store\"' has no exported member 'wrtable'.","code":2724,"source":"ts"}
+1702046600299 COMPLETED 12 FILES 2 ERRORS 1 WARNINGS 3 FILES_WITH_PROBLEMS

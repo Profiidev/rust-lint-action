@@ -17,9 +17,6 @@ export const forgejoApiCommit = async (
   run('git add -A');
 
   const changes = run('git diff-index --cached -M -z HEAD');
-  if (changes.status !== 0) {
-    throw new Error(`Failed to get changed files: ${changes.stderr}`);
-  }
 
   const chunks = changes.stdout
     .split('\0')
@@ -133,9 +130,12 @@ export const forgejoApiCommit = async (
 
   if (error || !response || !response.ok) {
     if (response) {
-      const responseText = await response.text();
+      // The client already consumed the body and put it in `error`: JSON-parsed when possible
+      // (parseAs 'text' only applies to success bodies), the raw text otherwise, and {} if empty
       core.error(
-        `Forgejo API response: ${response.status} ${response.statusText}: ${responseText}`
+        `Forgejo API response: ${response.status} ${response.statusText}: ${
+          typeof error === 'string' ? error : JSON.stringify(error ?? '')
+        }`
       );
     }
 

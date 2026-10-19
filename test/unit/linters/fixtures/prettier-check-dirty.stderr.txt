@@ -1,0 +1,4 @@
+[warn] bad.ts
+[warn] t.ts
+[warn] tsconfig.json
+[warn] Code style issues found in 3 files. Run Prettier with --write to fix.

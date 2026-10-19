@@ -1,0 +1,115 @@
+name: Tests
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: bahmutov/npm-install@v1
+      - name: Run tests
+        run: npm run test:unit -- --coverage --reporter junit --reporter default --outputFile test-results-unit.xml
+
+      - name: Upload Test Result File
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        with:
+          name: test-results-unit
+          path: test-results-unit.xml
+          retention-days: 5
+
+      - name: Upload Coverage
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        with:
+          name: coverage-unit
+          path: coverage/
+          retention-days: 5
+
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: bahmutov/npm-install@v1
+      - name: Run tests
+        run: npm run test:integration -- --coverage --reporter junit --reporter default --outputFile test-results-integration.xml
+
+      - name: Upload Test Result File
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        with:
+          name: test-results-integration
+          path: test-results-integration.xml
+          retention-days: 5
+
+      - name: Upload Coverage
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        with:
+          name: coverage-integration
+          path: coverage/
+          retention-days: 5
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          components: clippy,rustfmt
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Install Python linters
+        run: pip install mypy ty basedpyright autopep8 ruff black
+      - uses: bahmutov/npm-install@v1
+      - name: Install Node linters of the fixture
+        run: npm ci --prefix test/e2e/fixtures/node
+
+      - name: Run tests
+        run: E2E_REQUIRE_TOOLS=1 npm run test:e2e -- --reporter junit --reporter default --outputFile test-results-e2e.xml
+
+      - name: Upload Test Result File
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        with:
+          name: test-results-e2e
+          path: test-results-e2e.xml
+          retention-days: 5
+
+  comment_results:
+    name: Comment Results to PR
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - unit
+      - integration
+      - e2e
+    permissions:
+      checks: write
+      pull-requests: write
+    steps:
+      - name: Download Test Results
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: test-results-*
+          merge-multiple: true
+          path: test-results
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@7622c5bf3d112a72ab4fa3951c2aa5723d8ab92d # v2
+        with:
+          files: |
+            test-results/**/*.xml

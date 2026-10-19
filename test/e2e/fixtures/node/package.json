@@ -1,0 +1,16 @@
+{
+  "name": "e2e-node-fixture",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.13.0",
+    "oxfmt": "0.73.0",
+    "oxlint": "1.88.0",
+    "prettier": "3.9.10",
+    "sv": "1.1.1",
+    "svelte": "5.57.2",
+    "svelte-check": "4.7.7",
+    "typescript": "6.0.3"
+  }
+}

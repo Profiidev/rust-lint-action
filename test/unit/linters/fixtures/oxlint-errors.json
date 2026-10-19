@@ -1,0 +1,41 @@
+{
+  "diagnostics": [
+    {
+      "message": "Unexpected token",
+      "severity": "error",
+      "filename": "broken.js",
+      "labels": [
+        {
+          "span": {
+            "offset": 10,
+            "length": 1,
+            "line": 1,
+            "column": 11
+          }
+        }
+      ]
+    },
+    {
+      "message": "Expected === and instead saw ==",
+      "code": "eslint(eqeqeq)",
+      "severity": "error",
+      "url": "https://oxc.rs/docs/guide/usage/linter/rules/eslint/eqeqeq.html",
+      "help": "Prefer === operator",
+      "filename": "e.js",
+      "labels": [
+        {
+          "span": {
+            "offset": 6,
+            "length": 2,
+            "line": 1,
+            "column": 7
+          }
+        }
+      ]
+    }
+  ],
+  "number_of_files": 2,
+  "number_of_rules": 97,
+  "threads_count": 20,
+  "start_time": 0.0247
+}

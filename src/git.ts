@@ -1,6 +1,6 @@
 import * as core from '@actions/core';
 
-import { run } from './utils/action';
+import { git } from './utils/action';
 import type { GithubContext } from './github/context';
 
 /**
@@ -16,21 +16,24 @@ export const checkOutRemoteBranch = (context: GithubContext): void => {
     const cloneURl = new URL(context.repository.forkCloneUrl);
     cloneURl.username = context.actor;
     cloneURl.password = context.token;
-    run(`git remote add fork ${cloneURl.toString()}`);
+    git(['remote', 'add', 'fork', cloneURl.toString()]);
   } else {
     // No fork: Update remote URL to include auth information (so auto-fixes can be pushed)
     core.info(`Adding auth information to Git remote URL`);
     const cloneURl = new URL(context.repository.cloneUrl);
     cloneURl.username = context.actor;
     cloneURl.password = context.token;
-    run(`git remote set-url origin ${cloneURl.toString()}`);
+    git(['remote', 'set-url', 'origin', cloneURl.toString()]);
   }
 
-  const remote = context.repository.hasFork ? 'fork' : 'origin';
+  const remote =
+    context.repository.hasFork && context.repository.forkCloneUrl
+      ? 'fork'
+      : 'origin';
 
   // Fetch remote branch
   core.info(`Fetching remote branch "${context.branch}"`);
-  run(`git fetch --no-tags --depth=1 ${remote} ${context.branch}`);
+  git(['fetch', '--no-tags', '--depth=1', remote, context.branch]);
 
   // Switch to remote branch
 
@@ -39,13 +42,17 @@ export const checkOutRemoteBranch = (context: GithubContext): void => {
     context.eventName === 'pull_request_target'
   ) {
     core.info(`Resetting local branch to ${remote}/${context.branch}`);
-    run(`git reset --hard ${remote}/${context.branch}`);
+    git(['reset', '--hard', `${remote}/${context.branch}`]);
   } else {
     core.info(`Switching to the "${context.branch}" branch`);
-    run(
-      `git branch --force ${context.branch} --track ${remote}/${context.branch}`
-    );
-    run(`git checkout ${context.branch}`);
+    git([
+      'branch',
+      '--force',
+      context.branch,
+      '--track',
+      `${remote}/${context.branch}`
+    ]);
+    git(['checkout', context.branch]);
   }
 };
 
@@ -59,7 +66,13 @@ export const commitChanges = (
   skipVerification: boolean
 ): void => {
   core.info(`Committing changes`);
-  run(`git commit -am "${message}"${skipVerification ? ' --no-verify' : ''}`);
+  git([
+    'commit',
+    '-a',
+    '-m',
+    message,
+    ...(skipVerification ? ['--no-verify'] : [])
+  ]);
 };
 
 /**
@@ -67,7 +80,7 @@ export const commitChanges = (
  * @returns {string} - Head SHA
  */
 export const getHeadSha = (): string => {
-  const sha = run('git rev-parse HEAD').stdout.trim();
+  const sha = git(['rev-parse', 'HEAD']).stdout.trim();
   core.info(`SHA of last commit is "${sha}"`);
   return sha;
 };
@@ -77,16 +90,19 @@ export const getHeadSha = (): string => {
  * @returns {boolean} - Boolean indicating whether changes exist
  */
 export const hasChanges = (): boolean => {
-  const output = run('git diff-index --name-status --exit-code HEAD --', {
-    ignoreErrors: true
-  });
+  const output = git(
+    ['diff-index', '--name-status', '--exit-code', 'HEAD', '--'],
+    {
+      ignoreErrors: true
+    }
+  );
   const hasChangedFiles = output.status === 1;
   core.info(`${hasChangedFiles ? 'Changes' : 'No changes'} found with Git`);
   return hasChangedFiles;
 };
 
 export const getChanges = (): string => {
-  const output = run('git diff --exit-code HEAD --', {
+  const output = git(['diff', '--exit-code', 'HEAD', '--'], {
     ignoreErrors: true
   });
   return output.stdout.trim();
@@ -98,7 +114,7 @@ export const getChanges = (): string => {
  */
 export const pushChanges = (skipVerification: boolean): void => {
   core.info('Pushing changes with Git');
-  run(`git push${skipVerification ? ' --no-verify' : ''}`);
+  git(['push', ...(skipVerification ? ['--no-verify'] : [])]);
 };
 
 /**
@@ -106,16 +122,12 @@ export const pushChanges = (skipVerification: boolean): void => {
  */
 export const setUserInfo = (name: string, email: string): void => {
   core.info(`Setting Git user information`);
-  run(`git config --global user.name "${name}"`);
-  run(`git config --global user.email "${email}"`);
+  git(['config', '--global', 'user.name', name]);
+  git(['config', '--global', 'user.email', email]);
 };
 
 export const getChangedFiles = (): string[] => {
-  run('git add -A');
-  const changes = run('git diff --cached --name-only --no-renames');
-  if (changes.status !== 0) {
-    throw new Error(`Error trying to get staged changes: ${changes.stderr}`);
-  }
-
+  git(['add', '-A']);
+  const changes = git(['diff', '--cached', '--name-only', '--no-renames']);
   return changes.stdout.split(/\r?\n/).filter((f) => f);
 };

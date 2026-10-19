@@ -56,7 +56,9 @@ export default class Mypy {
     }
 
     // Only lint the whole directory if no path was passed in the args
-    const specifiedPath = args.split(' ').some((arg) => existsSync(arg));
+    const specifiedPath = args
+      .split(' ')
+      .some((arg) => arg && existsSync(nodePath.resolve(dir, arg)));
     const extraArgs = specifiedPath ? '' : ` ${dir}`;
 
     return run(`${prefix} mypy ${args}${extraArgs}`, {

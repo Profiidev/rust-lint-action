@@ -1,0 +1,86 @@
+[
+  {
+    "description": "Import \"os\" is not accessed",
+    "fingerprint": "46b61fa588a01c34bddc030bd16a6128",
+    "severity": "major",
+    "location": {
+      "path": "m.py",
+      "positions": {
+        "begin": { "line": 1, "column": 7 },
+        "end": { "line": 1, "column": 9 }
+      }
+    }
+  },
+  {
+    "description": "Type \"Literal['a']\" is not assignable to declared type \"int\"\n  \"Literal['a']\" is not assignable to \"int\"",
+    "fingerprint": "b2751fefbf4039356fc97354f4ddff8b",
+    "severity": "blocker",
+    "location": {
+      "path": "m.py",
+      "positions": {
+        "begin": { "line": 2, "column": 9 },
+        "end": { "line": 2, "column": 12 }
+      }
+    }
+  },
+  {
+    "description": "Return type is unknown",
+    "fingerprint": "94efc0872517aa9dca703e1630354180",
+    "severity": "major",
+    "location": {
+      "path": "m.py",
+      "positions": {
+        "begin": { "line": 3, "column": 4 },
+        "end": { "line": 3, "column": 5 }
+      }
+    }
+  },
+  {
+    "description": "Type of parameter \"a\" is unknown",
+    "fingerprint": "6378394af73f6cb931c83f3b30f56c57",
+    "severity": "major",
+    "location": {
+      "path": "m.py",
+      "positions": {
+        "begin": { "line": 3, "column": 6 },
+        "end": { "line": 3, "column": 7 }
+      }
+    }
+  },
+  {
+    "description": "Type annotation is missing for parameter \"a\"",
+    "fingerprint": "86d3f18e5fc483f305445d06488efb1e",
+    "severity": "major",
+    "location": {
+      "path": "m.py",
+      "positions": {
+        "begin": { "line": 3, "column": 6 },
+        "end": { "line": 3, "column": 7 }
+      }
+    }
+  },
+  {
+    "description": "Type of \"foo\" is unknown",
+    "fingerprint": "21b5ff024fe23f71f1c09b174ef60ce4",
+    "severity": "major",
+    "location": {
+      "path": "m.py",
+      "positions": {
+        "begin": { "line": 4, "column": 11 },
+        "end": { "line": 4, "column": 16 }
+      }
+    }
+  },
+  {
+    "description": "Return type is unknown",
+    "fingerprint": "0a3397907ed70e24ed48529563bf8ec4",
+    "severity": "major",
+    "location": {
+      "path": "m.py",
+      "positions": {
+        "begin": { "line": 4, "column": 11 },
+        "end": { "line": 4, "column": 16 }
+      }
+    }
+  }
+]

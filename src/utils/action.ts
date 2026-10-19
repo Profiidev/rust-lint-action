@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import * as core from '@actions/core';
 
 interface RunOptions {
@@ -34,29 +34,26 @@ export const getEnv = (name: string, required = false): string | undefined => {
   return value;
 };
 
-/**
- * Executes the provided shell command
- * @param {string} cmd - Shell command to execute
- * @param {RunOptions} [options] - {@see RUN_OPTIONS_DEFAULTS}
- * @returns {{status: number | null, stdout: string, stderr: string}} - Output of the shell command
- */
-export const run = (
-  cmd: string,
+interface RunOutput {
+  status: number | null;
+  stdout: string;
+  stderr: string;
+}
+
+const execute = (
+  label: string,
+  exec: (cwd: string | undefined) => string,
   options?: RunOptions
-): { status: number | null; stdout: string; stderr: string } => {
+): RunOutput => {
   const optionsWithDefaults = {
     ...RUN_OPTIONS_DEFAULTS,
     ...options
   };
 
-  core.debug(cmd);
+  core.debug(label);
 
   try {
-    const stdout = execSync(cmd, {
-      cwd: optionsWithDefaults.dir || undefined,
-      encoding: 'utf8',
-      maxBuffer: 20 * 1024 * 1024
-    });
+    const stdout = exec(optionsWithDefaults.dir || undefined);
     const output = {
       status: 0,
       stderr: '',
@@ -83,3 +80,31 @@ export const run = (
     throw error;
   }
 };
+
+const EXEC_OPTIONS = {
+  encoding: 'utf8',
+  maxBuffer: 20 * 1024 * 1024
+} as const;
+
+/**
+ * Executes the provided shell command
+ * @param {string} cmd - Shell command to execute
+ * @param {RunOptions} [options] - {@see RUN_OPTIONS_DEFAULTS}
+ * @returns {{status: number | null, stdout: string, stderr: string}} - Output of the shell command
+ */
+export const run = (cmd: string, options?: RunOptions): RunOutput =>
+  execute(cmd, (cwd) => execSync(cmd, { ...EXEC_OPTIONS, cwd }), options);
+
+/**
+ * Executes git with the given arguments without a shell, so untrusted values (branch names,
+ * user names, URLs) can't inject shell syntax
+ * @param {string[]} args - Git arguments
+ * @param {RunOptions} [options] - {@see RUN_OPTIONS_DEFAULTS}
+ * @returns {{status: number | null, stdout: string, stderr: string}} - Output of git
+ */
+export const git = (args: string[], options?: RunOptions): RunOutput =>
+  execute(
+    `git ${args.join(' ')}`,
+    (cwd) => execFileSync('git', args, { ...EXEC_OPTIONS, cwd }),
+    options
+  );

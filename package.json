@@ -8,10 +8,15 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "vite build",
-    "lint": "eslint --max-warnings 0 \"**/*.ts\"",
-    "lint:fix": "npm run lint -- --fix",
     "format": "oxfmt",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "lint": "oxlint",
+    "test": "vitest run --project unit --project integration",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:e2e": "vitest run --project e2e",
+    "test:coverage": "vitest run --project unit --project integration --coverage",
+    "test:watch": "vitest --project unit --project integration"
   },
   "dependencies": {
     "@actions/core": "^3.0.0",
@@ -25,11 +30,13 @@
     "@redocly/cli": "2.57.0",
     "@types/command-exists": "1.2.3",
     "@types/node": "25.9.9",
+    "@vitest/coverage-v8": "5.0.5",
     "openapi-format": "1.33.7",
     "oxfmt": "0.71.0",
     "oxlint": "1.86.0",
     "oxlint-tsgolint": "7.0.2003",
     "typescript": "6.0.3",
-    "vite": "8.3.2"
+    "vite": "8.3.2",
+    "vitest": "5.0.5"
   }
 }

@@ -1,0 +1,8 @@
+Checking formatting...
+
+bad.ts (0ms)
+t.ts (0ms)
+tsconfig.json (0ms)
+
+Format issues found in above 3 files. Run without `--check` to fix.
+Finished in 6ms on 4 files using 20 threads.

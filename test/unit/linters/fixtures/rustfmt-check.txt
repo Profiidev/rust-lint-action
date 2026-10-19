@@ -1,0 +1,13 @@
+Diff in /home/runner/work/app/src/main.rs:1:
+ fn main() {
+-    let   y : i32= 3;
++    let y: i32 = 3;
+     println!("{}", y);
+ }
+ 
+Diff in /home/runner/work/app/src/main.rs:6:
+-fn helper( a:i32)->i32{ a }
++fn helper(a: i32) -> i32 {
++    a
++}
+ 

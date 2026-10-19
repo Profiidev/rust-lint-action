@@ -45,5 +45,32 @@
     "typeAware": true,
     "typeCheck": true
   },
-  "ignorePatterns": ["dist/**", "src/forgejo-client/**"]
+  "ignorePatterns": [
+    "dist/**",
+    "src/forgejo-client/**",
+    "test/e2e/fixtures/**"
+  ],
+  "overrides": [
+    {
+      "files": ["test/**"],
+      "rules": {
+        "eslint/max-lines": "off",
+        "eslint/max-lines-per-function": "off",
+        "eslint/no-await-in-loop": "off",
+        "eslint/max-nested-callbacks": "off",
+        "eslint/no-template-curly-in-string": "off",
+        "eslint/no-plusplus": "off",
+        "eslint/sort-keys": "off",
+        "eslint/func-style": "off",
+        "eslint/no-void": "off",
+        "eslint/class-methods-use-this": "off",
+        "typescript/no-unsafe-type-assertion": "off",
+        "eslint/require-await": "off",
+        "unicorn/no-null": "off",
+        "unicorn/no-useless-undefined": "off",
+        "oxc/no-map-spread": "off",
+        "eslint/init-declarations": "off"
+      }
+    }
+  ]
 }
