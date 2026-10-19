@@ -9,11 +9,11 @@ interface OxLintResult {
 interface OxLintDiagnostic {
   message: string;
   severity: 'error' | 'warning' | 'info';
-  code: string;
-  url: string;
-  help: string;
+  code?: string;
+  url?: string;
+  help?: string;
   filename: string;
-  labels: OxLintLabel[];
+  labels?: OxLintLabel[];
 }
 
 interface OxLintLabel {
@@ -97,10 +97,20 @@ export default class OxLint {
       }
 
       lintResult.isSuccess = false;
+      const line = diagnostic.labels?.[0]?.span.line ?? 1;
+      const message = [
+        diagnostic.code
+          ? `${diagnostic.message} (code: ${diagnostic.code})`
+          : diagnostic.message,
+        diagnostic.help,
+        diagnostic.url && `More info: ${diagnostic.url}`
+      ]
+        .filter(Boolean)
+        .join('\n');
       lintResult[diagnostic.severity].push({
-        firstLine: diagnostic.labels[0].span.line,
-        lastLine: diagnostic.labels[0].span.line,
-        message: `${diagnostic.message} (code: ${diagnostic.code})\n${diagnostic.help}\nMore info: ${diagnostic.url}`,
+        firstLine: line,
+        lastLine: line,
+        message,
         path: diagnostic.filename
       });
     }

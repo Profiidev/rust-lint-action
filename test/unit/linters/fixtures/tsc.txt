@@ -1,0 +1,2 @@
+t.ts(1,5): error TS2322: Type 'string' is not assignable to type 'number'.
+t.ts(2,19): error TS7006: Parameter 'y' implicitly has an 'any' type.

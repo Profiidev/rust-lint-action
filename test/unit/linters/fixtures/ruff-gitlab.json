@@ -1,0 +1,28 @@
+[
+  {
+    "check_name": "unformatted",
+    "description": "unformatted: File would be reformatted",
+    "fingerprint": "ef4a3b1d7f1e0c22",
+    "location": {
+      "path": "src/app.py",
+      "positions": {
+        "begin": { "column": 1, "line": 1 },
+        "end": { "column": 1, "line": 4 }
+      }
+    },
+    "severity": "major"
+  },
+  {
+    "check_name": "unformatted",
+    "description": "unformatted: File would be reformatted",
+    "fingerprint": "9c0d4e8fa1b2c3d4",
+    "location": {
+      "path": "pkg/models.py",
+      "positions": {
+        "begin": { "column": 1, "line": 12 },
+        "end": { "column": 1, "line": 15 }
+      }
+    },
+    "severity": "major"
+  }
+]

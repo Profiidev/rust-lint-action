@@ -1,0 +1,14 @@
+--- original/./src/app.py
++++ fixed/./src/app.py
+@@ -1,4 +1,4 @@
+ import os
+-def f( a ):
++def f(a):
+     return a
+ 
+--- original/./pkg/models.py
++++ fixed/./pkg/models.py
+@@ -5,2 +5,2 @@
+-x=1
++x = 1
+ y = 2

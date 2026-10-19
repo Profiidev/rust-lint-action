@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import * as core from '@actions/core';
@@ -63,6 +63,7 @@ export default class Basedpyright {
     result.stdout = existsSync(outputPath)
       ? readFileSync(outputPath, 'utf8')
       : '';
+    rmSync(reportDir, { force: true, recursive: true });
     return result;
   }
 
@@ -81,7 +82,9 @@ export default class Basedpyright {
   ): LintResult {
     const lintResult = codeQualityToLintResult(
       JSON.parse(output.stdout || '[]'),
-      relativeDir
+      relativeDir,
+      // Basedpyright reports errors as `blocker` and warnings as `major`
+      ['blocker', 'critical']
     );
     lintResult.isSuccess = output.status === 0;
     return lintResult;

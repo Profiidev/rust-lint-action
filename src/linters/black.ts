@@ -46,10 +46,19 @@ export default class Black {
     const files = `^.*\\.(${extensions.join('|')})$`;
     const fixArg = fix ? '' : '--check --diff';
 
-    return run(`${prefix} black ${fixArg} --include "${files}" ${args} "."`, {
-      dir,
-      ignoreErrors: true
-    });
+    const output = run(
+      `${prefix} black ${fixArg} --include "${files}" ${args} "."`,
+      { dir, ignoreErrors: true }
+    );
+
+    // Black prints absolute paths in diff headers, make them relative to dir
+    for (const sign of ['---', '+++']) {
+      output.stdout = output.stdout
+        .split(`${sign} ${dir}${path.sep}`)
+        .join(`${sign} `);
+    }
+
+    return output;
   }
 
   /**

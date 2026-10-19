@@ -69,11 +69,13 @@ export default class Prettier {
     const lintResult = initLintResult();
     lintResult.isSuccess = output.status === 0;
 
-    if (!output.stdout) {
-      return lintResult;
-    }
-
-    const paths = output.stdout.split(/\r?\n/);
+    // `prettier --check` lists unformatted files on stderr as `[warn] <path>`, followed by a
+    // `[warn] Code style issues ...` summary line
+    const paths = output.stderr
+      .split(/\r?\n/)
+      .filter((line) => line.startsWith('[warn] '))
+      .map((line) => line.slice('[warn] '.length).trim())
+      .filter((path) => path && !path.startsWith('Code style issues'));
     lintResult.error = paths.map((path) => ({
       firstLine: 1,
       lastLine: 1,

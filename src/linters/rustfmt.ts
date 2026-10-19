@@ -1,3 +1,4 @@
+import nodePath from 'node:path';
 import { run } from '../utils/action';
 import commandExists from '../utils/command-exists';
 import { type LintResult, initLintResult } from '../utils/lint-result';
@@ -73,9 +74,12 @@ export default class RustFmt {
       if (!match) {
         continue;
       }
-      // Split on dir works for windows UNC paths, the substring strips out the
-      // Left over '/' or '\\'
-      const path = pathFull.split(dir)[1].substring(1);
+      // Keep the path as printed when it is outside of dir
+      const relativePath = nodePath.relative(dir, pathFull);
+      const path =
+        relativePath.startsWith('..') || nodePath.isAbsolute(relativePath)
+          ? pathFull
+          : relativePath;
       const lineNr = Number.parseInt(line, 10);
       lintResult.error.push({
         firstLine: lineNr,

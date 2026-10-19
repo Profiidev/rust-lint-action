@@ -2,8 +2,8 @@ import * as core from '@actions/core';
 
 import type { GithubContext } from './context';
 import type { Octokit } from '@octokit/core';
-import { run } from '../utils/action';
-import { readFileSync } from 'node:fs';
+import { git } from '../utils/action';
+import { readFileSync, readlinkSync } from 'node:fs';
 import path from 'node:path';
 import { type GitMode, getFileMode } from '../utils/file';
 import { getChangedFiles } from '../git';
@@ -58,7 +58,7 @@ export const apiCommit = async (
   }
 
   const blobs: {
-    sha?: string;
+    sha: string | null;
     path: string;
     type: 'blob';
     mode: GitMode;
@@ -67,23 +67,29 @@ export const apiCommit = async (
   core.startGroup(`Creating blobs for ${changedFiles.length} changed files…`);
   for (const file of changedFiles) {
     const location = path.join(context.workspace, file);
-    const content = Buffer.from(readFileSync(location)).toString('base64');
-
-    let mode: GitMode = '100644';
+    // oxlint-disable-next-line init-declarations
+    let mode: GitMode;
     try {
       mode = getFileMode(location, true);
     } catch {
-      core.info(
-        `Couldn't determine file mode for ${file}, using default "100644"`
-      );
+      // File no longer exists: a null sha deletes it from the tree
+      core.info(`${file} was deleted`);
       blobs.push({
         mode: '100644',
         path: file,
-        sha: undefined,
+        // oxlint-disable-next-line no-null -- the trees API deletes entries with a null sha
+        sha: null,
         type: 'blob'
       });
       continue;
     }
+
+    // Symlink blobs hold the link target, not the content it points to
+    const raw =
+      mode === '120000'
+        ? Buffer.from(readlinkSync(location))
+        : readFileSync(location);
+    const content = raw.toString('base64');
 
     // oxlint-disable no-await-in-loop
     const { sha } = (
@@ -110,11 +116,6 @@ export const apiCommit = async (
     'blobs',
     blobs.map((b) => b.sha)
   );
-
-  if (blobs.length === 0) {
-    core.info('No blobs to commit');
-    return;
-  }
 
   const tree = (
     await octokit.request('POST /repos/{owner}/{repo}/git/trees', {
@@ -147,7 +148,7 @@ export const apiCommit = async (
   ).data.object.sha;
   core.info(`Updated ref ${ref} to point to commit ${refSha}`);
 
-  run(`git pull origin refs/${ref}`);
+  git(['pull', 'origin', `refs/${ref}`]);
 };
 
 export const normalizeRef = (ref: string): string => {

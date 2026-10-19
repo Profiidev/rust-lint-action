@@ -77,22 +77,21 @@ export default class Clippy {
   ): LintResult {
     const lintResult = initLintResult();
 
-    const lines = output.stdout.split('\n').map((line) => {
-      let parsedLine = undefined;
-      try {
-        let normalizedLine = line;
-        if (process.platform === 'win32') {
-          normalizedLine = line.replace(/\\/gi, String.raw`\\`);
+    const lines = output.stdout
+      .split('\n')
+      .filter((line) => line.trim())
+      .map((line) => {
+        let parsedLine = undefined;
+        try {
+          parsedLine = JSON.parse(line);
+        } catch (error: any) {
+          throw new Error(
+            `Error parsing ${this.linterName} JSON output: ${error.message}. Output: "${output.stdout}"`,
+            { cause: error }
+          );
         }
-        parsedLine = JSON.parse(normalizedLine);
-      } catch (error: any) {
-        throw new Error(
-          `Error parsing ${this.name} JSON output: ${error.message}. Output: "${output.stdout}"`,
-          { cause: error }
-        );
-      }
-      return parsedLine;
-    });
+        return parsedLine;
+      });
 
     for (const line of lines) {
       if (line.reason === 'compiler-message') {
@@ -111,7 +110,7 @@ export default class Clippy {
           const { code, message, spans } = line.message;
           // Don't add the message counting the errors
           if (code !== null) {
-            lintResult.warning.push({
+            lintResult.error.push({
               firstLine: spans[0].line_start,
               lastLine: spans[0].line_end,
               message,

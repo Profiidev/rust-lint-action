@@ -83,8 +83,8 @@ export default class Svelte {
     lintResult.error = lints
       .filter((lint) => lint.type === 'ERROR')
       .map((lint) => ({
-        firstLine: lint.start.line,
-        lastLine: lint.end.line,
+        firstLine: lint.start.line + 1,
+        lastLine: lint.end.line + 1,
         message: lint.message,
         path: lint.filename
       }));
@@ -92,8 +92,8 @@ export default class Svelte {
     lintResult.warning = lints
       .filter((lint) => lint.type === 'WARNING')
       .map((lint) => ({
-        firstLine: lint.start.line,
-        lastLine: lint.end.line,
+        firstLine: lint.start.line + 1,
+        lastLine: lint.end.line + 1,
         message: lint.message,
         path: lint.filename
       }));
