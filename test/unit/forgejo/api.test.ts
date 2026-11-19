@@ -121,7 +121,7 @@ describe('forgejoApiCommit', () => {
     'warns about unsupported status %s',
     async (status) => {
       const diff = [
-        `:100644 120000 ${SRC} ${DST} ${status}`,
+        `:100644 100755 ${SRC} ${DST} ${status}`,
         'link',
         `:100644 100644 ${SRC} ${DST} M`,
         'y.rs'
@@ -139,6 +139,28 @@ describe('forgejoApiCommit', () => {
       );
     }
   );
+
+  it('skips symlinks without reading them', async () => {
+    const diff = [
+      `:000000 120000 ${ZERO} ${DST} A`,
+      'leak',
+      `:120000 120000 ${SRC} ${DST} R100`,
+      'old-link',
+      'new-link',
+      `:100644 100644 ${SRC} ${DST} M`,
+      'y.rs'
+    ].join('\0');
+    expect(await commit(diff)).toEqual([
+      { content: b64('/ws/y.rs'), operation: 'update', path: 'y.rs', sha: SRC }
+    ]);
+    expect(readFileSync).toHaveBeenCalledTimes(1);
+    expect(core.warning).toHaveBeenCalledWith(
+      'Skipping symlink leak, not supported by Forgejo'
+    );
+    expect(core.warning).toHaveBeenCalledWith(
+      'Skipping symlink new-link, not supported by Forgejo'
+    );
+  });
 
   it('skips chunks that are not metadata lines', async () => {
     const diff = [
