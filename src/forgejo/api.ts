@@ -5,6 +5,7 @@ import type { GithubContext } from '../github/context';
 import { readFileSync } from 'node:fs';
 import { run } from '../utils/action';
 
+// oxlint-disable-next-line complexity
 export const forgejoApiCommit = async (
   context: GithubContext,
   message: string,
@@ -38,8 +39,19 @@ export const forgejoApiCommit = async (
     }
 
     // oxlint-disable-next-line no-unreadable-array-destructuring
-    const [, , , srcSha, , status] = match;
+    const [, , dstMode, srcSha, , status] = match;
     const statusCode = status[0].toUpperCase();
+
+    /*
+     * Reading a symlink would follow it and upload the target's content, possibly from outside
+     * the workspace. The Forgejo contents API can't store symlinks, so skip them
+     */
+    if (dstMode === '120000') {
+      const linkPath = chunks[i + (statusCode === 'R' ? 2 : 1)];
+      core.warning(`Skipping symlink ${linkPath}, not supported by Forgejo`);
+      i += statusCode === 'R' ? 3 : 2;
+      continue;
+    }
 
     if (statusCode === 'R') {
       const fromPath = chunks[i + 1];
